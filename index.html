@@ -81,7 +81,8 @@ NOTAS DEL ARCHIVO (todas las notas van aquí arriba)
    y el teléfono tiene selector con todos los países de América en orden alfabético (Perú +51 por defecto). Supabase acepta Proyecto con supabase-completo.sql.
 11. TECLA 1: pone la página en pantalla completa (modo F11) y, al pulsarla otra vez, sale (Esc también sale). No hace nada si hay un desplegable abierto (Alquilar, Departamento, Precio, Más filtros, Ordenar),
    si están las sugerencias de Ubicación, si la ventana Publicar está abierta o si se está escribiendo en una casilla. El código está al final del JavaScript.
-12. SUPABASE: supabase-completo.sql crea y deja todo listo (tabla, reglas de seguridad y bucket "fotos" de 500 KB por archivo, solo JPG, ruta fija) y se puede correr varias veces. La página ya reduce cada foto a menos de 500 KB antes de subirla.
+12. SUPABASE: supabase-completo.sql crea y deja todo listo (tabla, reglas de seguridad y bucket "fotos" de 500 KB por archivo, solo JPG) y se puede correr varias veces.
+13. ANTIBOT: el formulario envía todo a la función "publicar" (funcion-publicar.ts), que verifica Turnstile (Cloudflare) y guarda las fotos y el anuncio. Pasos: pegar la Site Key en TS_SITEKEY, crear la función en Supabase con el secreto TURNSTILE_SECRET_KEY y, cuando ya funcione, correr supabase-cerrar-escritura.sql para que nadie pueda escribir directo. La página ya reduce cada foto a menos de 500 KB antes de subirla.
 -->
 <html lang="es">
 <head>
@@ -481,12 +482,14 @@ textarea.pf-i{height:92px;padding:10px 14px;resize:vertical;font-family:var(--bo
       </div>
     </div>
     <div class="pf-trampa" aria-hidden="true"><label>No llenar este campo<input name="web" type="text" tabindex="-1" autocomplete="off"></label></div>
+    <div id="pf-ts"></div>
     <p class="pf-msg" id="pf-msg" role="status" aria-live="polite"></p>
     <button class="pf-send" id="pf-send" type="submit">Enviar para revisión</button>
   </form>
 </dialog>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
 <script>
 const WA='51903307861';
 const LATAM=[[-56,-118],[32,-34]]; // vista inicial: Latinoamérica
@@ -528,6 +531,8 @@ const wa=(t,n)=>'https://wa.me/'+num(n)+'?text='+encodeURIComponent(t);
 /* ===== Supabase: anuncios que publica la gente (ver nota 9 y el archivo supabase-completo.sql) ===== */
 const SB_URL='https://gjvmpvzekigveggbsyfe.supabase.co';  // ej.: 'https://abcdefgh.supabase.co'  (Project Settings > API > Project URL)
 const SB_KEY='sb_publishable_VWav2M1QSUNaS2xfOZYcbw_L40bNwuA';  // clave pública: 'anon' (empieza con eyJ...) o 'publishable' (empieza con sb_publishable_...)
+const TS_SITEKEY='0x4AAAAAAF1dJ-ubBRbB5FMW';  // Cloudflare > Turnstile > tu widget > Site Key (es pública)
+const FN_URL=SB_URL+'/functions/v1/publicar';  // función de Supabase que verifica Turnstile y guarda el anuncio
 const PROY=['Departamento','Casa','Terreno','Oficina']; // tipos que pueden ser Proyecto
 const FL={prev:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg>',
   next:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>'};
@@ -891,7 +896,17 @@ $('#list').addEventListener('pointerout',e=>{const c=e.target.closest('.card');i
   f.querySelectorAll('input[name="op"]').forEach(r=>r.addEventListener('change',pintarTipos));
   pintarTipos();
   const say=t=>{msg.textContent=t};
-  $('#pub').addEventListener('click',()=>{say('');dlg.showModal()});
+  // Turnstile (Cloudflare): prueba de que quien envía es una persona. La función de Supabase la verifica; el token sirve una sola vez.
+  let tsId=null,tsToken=null;
+  const montarTS=(n=0)=>{
+    if(tsId!==null||TS_SITEKEY.startsWith('PEGA'))return;
+    if(!window.turnstile){if(n<50)setTimeout(()=>montarTS(n+1),200);return}
+    tsId=turnstile.render('#pf-ts',{sitekey:TS_SITEKEY,theme:'dark',language:'es',appearance:'interaction-only',
+      callback:t=>{tsToken=t},'expired-callback':()=>{tsToken=null},'error-callback':()=>{tsToken=null}});
+  };
+  const nuevoTS=()=>{tsToken=null;if(tsId!==null&&window.turnstile)turnstile.reset(tsId)};
+  const esperarTS=async()=>{for(let i=0;i<75&&!tsToken;i++)await new Promise(r=>setTimeout(r,200));return tsToken};
+  $('#pub').addEventListener('click',()=>{say('');dlg.showModal();montarTS()});
   $('#pf-x').addEventListener('click',()=>dlg.close());
   dlg.addEventListener('click',e=>{if(e.target===dlg)dlg.close()}); // clic en el fondo oscuro
   f.querySelectorAll('.dig').forEach(el=>{
@@ -964,6 +979,7 @@ $('#list').addEventListener('pointerout',e=>{const c=e.target.closest('.card');i
     if(cod==='54'?loc.length!==10:(loc.length<lim[0]||loc.length>lim[1]))return bad('tel',cod==='54'?'Argentina usa 10 dígitos, sin el 9.':'Ese país usa '+(lim[0]===lim[1]?lim[0]:lim[0]+' u '+lim[1])+' dígitos.');
     if(fotos.length<MAX){say('Agrega las 3 fotos.');const a=caja.querySelector('.pf-add');if(a)a.focus();return}
     if(!SB_URL||!SB_KEY){say('El envío aún no está conectado: falta pegar SB_URL y SB_KEY en el código (nota 9).');return}
+    if(TS_SITEKEY.startsWith('PEGA')){say('Falta pegar la Site Key de Turnstile en el código (nota 13).');return}
     try{ if(Date.now()-(+localStorage.getItem('hh_ult')||0)<60000){say('Espera un minuto antes de enviar otro anuncio.');return} }catch(_){}
     send.disabled=true;
     try{
@@ -971,21 +987,23 @@ $('#list').addEventListener('pointerout',e=>{const c=e.target.closest('.card');i
       let pos=null;
       try{pos=await geo(dir+', '+zona)||await geo(zona)}catch(_){}
       if(!pos){say('No pudimos ubicar esa dirección en el mapa. Revisa la zona.');send.disabled=false;return}
-      const carpeta=(crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random().toString(36).slice(2));
-      const urls=[];
-      for(let i=0;i<fotos.length;i++){
-        say(`Subiendo fotos ${i+1} de ${fotos.length}…`);
-        const ruta=`${carpeta}/${i+1}.jpg`;
-        const r=await fetch(`${SB_URL}/storage/v1/object/fotos/${ruta}`,{method:'POST',headers:sbH({'Content-Type':'image/jpeg'}),body:fotos[i].blob});
-        if(!r.ok)throw new Error('foto '+r.status);
-        urls.push(`${SB_URL}/storage/v1/object/public/fotos/${ruta}`);
+      say('Verificando…');
+      const token=await esperarTS();
+      if(!token){say('No pudimos verificar que eres una persona. Recarga la página e inténtalo de nuevo.');nuevoTS();send.disabled=false;return}
+      say('Enviando anuncio y fotos…');
+      const fd=new FormData();
+      fd.append('token',token);
+      fd.append('web',v('web'));
+      fd.append('datos',JSON.stringify({op:f.elements.op.value,tipo:v('tipo'),precio,mon:f.elements.mon.value,m2,
+        dorm:+v('dorm')||0,ban:+v('ban')||0,est:+v('est')||0,dir,zona,descr:v('descr'),tel,lat:pos.lat,lng:pos.lng}));
+      fotos.forEach((x,i)=>fd.append('foto'+(i+1),x.blob,(i+1)+'.jpg'));
+      const r=await fetch(FN_URL,{method:'POST',headers:sbH(),body:fd});
+      nuevoTS(); // el token se usa una sola vez
+      if(!r.ok){
+        const j=await r.json().catch(()=>({}));
+        if(j.error==='captcha'){say('No pudimos verificar que eres una persona. Inténtalo de nuevo.');send.disabled=false;return}
+        throw new Error('funcion '+r.status+' '+(j.error||''));
       }
-      say('Enviando anuncio…');
-      const fila={estado:'pendiente',op:v('op')||f.elements.op.value,tipo:v('tipo'),precio,mon:f.elements.mon.value,m2,
-        dorm:+v('dorm')||0,ban:+v('ban')||0,est:+v('est')||0,dir,zona,descr:v('descr'),tel,lat:pos.lat,lng:pos.lng,fotos:urls};
-      fila.op=f.elements.op.value;
-      const r=await fetch(SB_URL+'/rest/v1/propiedades',{method:'POST',headers:sbH({'Content-Type':'application/json',Prefer:'return=minimal'}),body:JSON.stringify(fila)});
-      if(!r.ok)throw new Error('fila '+r.status);
       try{localStorage.setItem('hh_ult',String(Date.now()))}catch(_){}
       f.reset();pintarTipos();fotos.forEach(x=>URL.revokeObjectURL(x.url));fotos=[];pintarFotos();
       say('¡Listo! Recibimos tu anuncio. Se mostrará cuando lo aprobemos.');
