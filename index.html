@@ -237,12 +237,17 @@ button{font:inherit;color:inherit}
 .map{position:relative;isolation:isolate;display:flex;flex-direction:column;height:calc(100vh - 190px);min-height:360px;overflow:hidden;
   border:1px solid var(--linea);border-radius:28px;corner-shape:squircle}
 .canvas{position:relative;flex:1;min-height:0;background:var(--negro)}
-#mapa{position:absolute;inset:0;background:var(--negro);font-family:var(--body)}
+#mapa{position:absolute;inset:0;background:#e9e7e1;font-family:var(--body)}
 #ubi+svg{pointer-events:auto;cursor:pointer}
 .sug{position:absolute;top:calc(100% + 8px);left:0;z-index:60;width:max(100%,340px);max-width:min(460px,calc(100vw - 48px));padding:8px;display:grid;gap:2px;background:var(--negro);
   border:1px solid var(--linea);border-radius:22px;corner-shape:squircle;box-shadow:0 24px 60px -20px rgba(0,0,0,.9)}
 .sug[hidden]{display:none}
 .sug .opt{white-space:normal;text-align:left;line-height:1.3}
+.sug{max-height:min(380px,60vh);overflow-y:auto}
+.sug .cab{margin:0;padding:10px 14px 6px;color:var(--suave);font:600 13px var(--body)}
+.sug .opt{display:block;font-weight:400}
+.sug .opt strong{font-weight:800}
+.sug .opt.on{background:rgba(232,253,237,.08)}
 .sug .msg{margin:0;padding:14px;color:var(--suave);font:500 15px var(--body)}
 /* pantalla ancha, vista inicial: se ven justo 2 tarjetas (la de arriba + la primera de la lista) y su borde de abajo queda a sep del fondo de la pantalla;
    el mapa termina en esa misma línea.
@@ -292,19 +297,18 @@ html.mg-on,html.mg-on body{overflow:hidden} /* Ver mapa: sin barra de desplazami
 @media(max-width:460px){.canvas:has(#mcard:not([hidden])) .leaflet-top.leaflet-left .leaflet-control-zoom{margin-left:16px}}
 /* círculo que agrupa varias propiedades cercanas */
 .grupo{position:absolute;left:0;top:0;translate:-50% -50%;min-width:36px;height:36px;padding:0 9px;box-sizing:border-box;border-radius:999px;display:flex;align-items:center;justify-content:center;
-  background:var(--verde);color:var(--negro);font:700 14px var(--body);cursor:pointer;box-shadow:0 0 0 6px var(--verde-t)}
+  background:#0b5f45;color:#fff;font:700 14px var(--body);cursor:pointer;box-shadow:0 0 0 5px rgba(11,95,69,.28),0 2px 6px rgba(0,0,0,.28)}
 .pinwrap{background:none;border:0}
-.pin{position:absolute;left:0;top:0;translate:-50% calc(-100% - 7px);padding:5px 11px;border-radius:999px;background:var(--blanco);color:var(--negro);font:700 13px var(--body);white-space:nowrap;cursor:pointer;transition:background .2s,scale .2s}
-.pin::after{content:"";position:absolute;left:50%;bottom:-5px;translate:-50% 0;border:6px solid transparent;border-bottom:0;border-top-color:var(--blanco)}
-.pin.on,.pin:hover{background:var(--verde);scale:1.12}
-.pin.on::after,.pin:hover::after{border-top-color:var(--verde)}
-.pin.sel{background:var(--verde)}
-.pin.sel::after{border-top-color:var(--verde)}
-.leaflet-bar,.leaflet-bar a{border-color:var(--linea)!important}
-.leaflet-bar a{background:var(--negro)!important;color:var(--blanco)!important}
-.leaflet-bar a:hover{color:var(--verde)!important}
-.leaflet-control-attribution{background:rgba(26,26,26,.85)!important;color:var(--suave)!important}
-.leaflet-control-attribution a{color:var(--verde)!important}
+/* etiqueta verde oscuro con el punto exacto debajo (el punto marca la ubicación real) */
+.pin{--pc:#0b5f45;position:absolute;left:0;top:0;translate:-50% calc(-100% - 16px);transform-origin:50% calc(100% + 16px);padding:6px 12px;border-radius:8px;background:var(--pc);color:#fff;font:700 14px var(--body);white-space:nowrap;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.28);transition:background .2s,color .2s,scale .2s}
+.pin::after{content:"";position:absolute;left:50%;top:calc(100% + 8px);translate:-50% 0;width:16px;height:16px;box-sizing:border-box;border:3px solid #fff;border-radius:50%;background:var(--pc);box-shadow:0 1px 4px rgba(0,0,0,.35);transition:background .2s}
+.pin.on,.pin:hover,.pin.sel{--pc:var(--verde);color:var(--negro)}
+.pin.on,.pin:hover{scale:1.1}
+.leaflet-bar,.leaflet-bar a{border-color:rgba(0,0,0,.15)!important}
+.leaflet-bar a{background:#fff!important;color:#1a1a1a!important}
+.leaflet-bar a:hover{background:#f1f1f1!important}
+.leaflet-control-attribution{background:rgba(255,255,255,.85)!important;color:#555!important}
+.leaflet-control-attribution a{color:#0b5f45!important}
 .vm{display:flex;justify-content:space-between;align-items:center;padding:18px 22px;border-top:1px solid var(--linea);font-weight:700;transition:color .2s}
 .vm:hover{color:var(--verde)}
 .vm svg{width:20px;height:20px}
@@ -492,7 +496,7 @@ textarea.pf-i{height:92px;padding:10px 14px;resize:vertical;font-family:var(--bo
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
 <script>
 const WA='51903307861';
-const LATAM=[[-56,-118],[32,-34]]; // vista inicial: Latinoamérica
+const LATAM=[[-58,-170],[75,170]]; // vista inicial: todo el mundo (el nombre LATAM se conserva por el resto del código)
 const props=[]; // sin ejemplos: solo se muestran los anuncios aprobados en Supabase
 // cada propiedad tiene 3 fotos: la primera es `img`; las otras dos se buscan como nombre-2.webp y nombre-3.webp en la misma carpeta (ej.: depto1.webp, depto1-2.webp, depto1-3.webp)
 props.forEach(p=>{const b=p.img.replace(/\.webp$/,'');p.imgs=[p.img,b+'-2.webp',b+'-3.webp']});
@@ -506,6 +510,7 @@ const I={
 };
 const $=s=>document.querySelector(s);
 const fmt=n=>n.toLocaleString('en-US');
+const corto=n=>n>=1e6?+(n/1e6).toFixed(2)+'M':n>=1e3?+(n/1e3).toFixed(n<1e4?1:0)+'K':String(n);
 const num=n=>{n=String(n||WA);return /^54[1-8]\d{9}$/.test(n)?'549'+n.slice(2):n}; // Argentina: el celular lleva un 9 después del 54 (54 + 10 dígitos pasa a 54 9 + 10 dígitos)
 const wa=(t,n)=>'https://wa.me/'+num(n)+'?text='+encodeURIComponent(t);
 /* ===== Supabase: anuncios que publica la gente (ver nota 9 y el archivo supabase-completo.sql) ===== */
@@ -538,12 +543,12 @@ async function cargarPublicadas(){
 const estado={op:'alquiler',tipo:'Departamento',mon:'PEN',desde:0,hasta:0,zona:null,zonaNombre:'',mf:{sup:0,dorm:0,ban:0,est:0},orden:-1}; // orden: -1 = mayor precio (por defecto), 1 = menor precio
 let fav=new Set(), mapa=null, capa=null, marcas={}, visibles=[], selId=null;
 
-/* mapa real: Leaflet + mapa oscuro de CARTO (datos de OpenStreetMap), centrado en Lima */
+/* mapa real: Leaflet + mapa claro de CARTO (Voyager) (datos de OpenStreetMap), centrado en Lima */
 function iniciarMapa(){
   if(!window.L)return;
   mapa=L.map('mapa',{zoomSnap:.25,minZoom:2,dragging:!L.Browser.mobile});
   mapa.fitBounds(LATAM,{animate:false});
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{subdomains:'abcd',maxZoom:19,
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{subdomains:'abcd',maxZoom:19,
     attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>'}).addTo(mapa);
   capa=L.layerGroup().addTo(mapa);
   mapa.on('zoomend',()=>pintar(visibles));
@@ -556,7 +561,7 @@ function pintar(r){
   // se agrupan las propiedades que quedan a menos de 64 px entre sí (desde el zoom 17 ya no se agrupa)
   const z=mapa.getZoom(),grupos={};
   r.forEach(p=>{
-    const pt=mapa.project([p.lat,p.lng],z),k=z>=17?p.id:Math.floor(pt.x/64)+':'+Math.floor(pt.y/64);
+    const pt=mapa.project([p.lat,p.lng],z),k=z>=17?p.id:Math.floor(pt.x/96)+':'+Math.floor(pt.y/60);
     (grupos[k]=grupos[k]||[]).push(p);
   });
   Object.values(grupos).forEach(g=>{
@@ -567,7 +572,7 @@ function pintar(r){
       return;
     }
     const p=g[0];
-    const m=L.marker([p.lat,p.lng],{keyboard:false,icon:L.divIcon({className:'pinwrap',iconSize:[0,0],html:`<span class="pin">${monSim()} ${fmt(pv(p))}</span>`})}).addTo(capa);
+    const m=L.marker([p.lat,p.lng],{keyboard:false,icon:L.divIcon({className:'pinwrap',iconSize:[0,0],html:`<span class="pin">${monSim()} ${corto(pv(p))}</span>`})}).addTo(capa);
     const pin=m.getElement().querySelector('.pin');
     if(p.id===selId)pin.classList.add('sel');
     // al pasar el mouse (o tocar) un precio, la tarjeta de arriba cambia a esa propiedad; la página no se mueve
@@ -636,7 +641,7 @@ function render(){
   if(!r.some(x=>x.id===selId))selId=r.length?r[0].id:null;
   const may=t=>t.charAt(0).toUpperCase()+t.slice(1); // primera letra de cada elemento elegido en mayúscula
   const nom=may(r.length===1?tipo:plural[tipo]);
-  $('#titulo').textContent=`${r.length} ${nom} en ${may(op)} en ${zona?may(estado.zonaNombre||'esta zona'):'Lima'}`;
+  $('#titulo').textContent=`${r.length} ${nom} en ${may(op)} en ${zona?may(estado.zonaNombre||'esta zona'):'todo el mundo'}`;
   $('#list').innerHTML=r.length?r.map(p=>cardHTML(p,false)).join(''):
     `<div class="vacio">No hay propiedades con estos filtros.</div>`;
   pintar(r);
@@ -778,39 +783,98 @@ Object.keys(DD).forEach(k=>{
 document.addEventListener('click',e=>{if(!e.target.closest('.dd'))cerrar()});
 
 iniciarMapa();render();cargarPublicadas();
-/* Ubicaciones: se escribe cualquier lugar y se pulsa Enter (o la lupa); busca con OpenStreetMap (Nominatim, sin clave) */
+/* Ubicaciones: sugerencias reales del mapa mientras se escribe (Photon, datos de OpenStreetMap, sin clave) */
 (function(){
   const inp=$('#ubi'),sug=$('#sug');
-  let lista=[];
+  let lista=[],act=-1,tm=0,ctl=null,seq=0;
   const msg=t=>{const p=document.createElement('p');p.className='msg';p.textContent=t;sug.replaceChildren(p)};
-  const nombre=x=>x.display_name.split(',')[0].trim();
+  const unico=a=>[...new Set(a.filter(Boolean))];
+  let qAct='';
+  // texto tipo Urbania: "Miraflores, Lima, Perú"
+  const info=f=>{
+    const p=f.properties,calle=[p.street,p.housenumber].filter(Boolean).join(' ');
+    const tit=p.name||calle||p.district||p.locality||p.city||'';
+    const partes=unico([tit,p.name&&calle?calle:'',p.district||p.locality,p.city,p.state,p.country]);
+    return{tit,label:partes.join(', ')};
+  };
+  // pone en negrita lo que escribió la persona al inicio de cada palabra (sin usar innerHTML)
+  function resaltar(texto,q){
+    const fr=document.createDocumentFragment(),esc=q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    if(!esc){fr.append(texto);return fr}
+    const re=new RegExp('(^|[\\s,(-])('+esc+')','gi');
+    let ult=0,m;
+    while((m=re.exec(texto))){
+      const i=m.index+m[1].length;
+      fr.append(texto.slice(ult,i));
+      const s=document.createElement('strong');s.textContent=m[2];fr.append(s);
+      ult=i+m[2].length;
+    }
+    fr.append(texto.slice(ult));
+    return fr;
+  }
+  function pintar(){
+    act=-1;
+    if(!lista.length){msg('No encontramos ese lugar.');return}
+    const cab=document.createElement('p');cab.className='cab';cab.textContent='Ubicaciones';
+    sug.replaceChildren(cab,...lista.map((f,i)=>{
+      const b=document.createElement('button');
+      b.type='button';b.className='opt';b.dataset.i=i;b.append(resaltar(info(f).label,qAct));
+      return b;
+    }));
+  }
   async function buscar(){
     const q=inp.value.trim();
-    if(q.length<2)return;
-    sug.hidden=false;msg('Buscando…');
+    if(!q)return;
+    qAct=q;
+    const n=++seq;
+    if(ctl)ctl.abort();
+    ctl=new AbortController();
+    sug.hidden=false;
+    if(!lista.length)msg('Buscando…');
     try{
-      const r=await fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&accept-language=es&q='+encodeURIComponent(q));
+      // busca en todo el mundo (datos reales de OpenStreetMap)
+      const r=await fetch('https://photon.komoot.io/api/?limit=8&q='+encodeURIComponent(q),{signal:ctl.signal});
       if(!r.ok)throw new Error(r.status);
-      lista=await r.json();
-    }catch(e){msg('No se pudo buscar. Revisa tu conexión a internet.');return}
-    if(!lista.length){msg('No encontramos ese lugar.');return}
-    sug.replaceChildren(...lista.map((x,i)=>{const b=document.createElement('button');b.type='button';b.className='opt';b.dataset.i=i;b.textContent=x.display_name;return b}));
+      const j=await r.json();
+      if(n!==seq)return;
+      const vistos=new Set();
+      lista=(j.features||[]).filter(f=>{const {tit,label}=info(f);if(!tit||vistos.has(label))return false;vistos.add(label);return true});
+    }catch(e){if(e.name==='AbortError')return;msg('No se pudo buscar. Revisa tu conexión a internet.');return}
+    pintar();
   }
-  function ir(x){
-    const [s,n,w,e]=x.boundingbox.map(Number);
-    const b=L.latLngBounds([[s,w],[n,e]]).extend([(s+n)/2-.01,(w+e)/2-.01]).extend([(s+n)/2+.01,(w+e)/2+.01]); // mínimo ~2 km de lado
-    inp.value=nombre(x);estado.zona=b;estado.zonaNombre=nombre(x);
+  function ir(f){
+    const [lng,lat]=f.geometry.coordinates,ex=f.properties.extent,nom=info(f).tit;
+    const b=ex?L.latLngBounds([[ex[3],ex[0]],[ex[1],ex[2]]]):L.latLngBounds([[lat,lng],[lat,lng]]);
+    const c=b.getCenter();
+    b.extend([c.lat-.01,c.lng-.01]).extend([c.lat+.01,c.lng+.01]); // mínimo ~2 km de lado
+    inp.value=info(f).label;estado.zona=b;estado.zonaNombre=nom;
     sug.hidden=true;
     if(mapa)mapa.fitBounds(b,{padding:[30,30],maxZoom:16});
     render();
   }
-  inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();buscar()}else if(e.key==='Escape')sug.hidden=true});
+  function mover(d){
+    const o=[...sug.querySelectorAll('.opt')];
+    if(!o.length)return;
+    if(act>=0)o[act].classList.remove('on');
+    act=(act+d+o.length)%o.length;
+    o[act].classList.add('on');o[act].scrollIntoView({block:'nearest'});
+  }
+  inp.addEventListener('keydown',e=>{
+    if(e.key==='Enter'){
+      e.preventDefault();
+      if(act>=0&&lista[act])ir(lista[act]);else if(lista.length&&!sug.hidden)ir(lista[0]);else buscar();
+    }else if(e.key==='ArrowDown'){e.preventDefault();if(sug.hidden&&lista.length)sug.hidden=false;else mover(1)}
+    else if(e.key==='ArrowUp'){e.preventDefault();mover(-1)}
+    else if(e.key==='Escape')sug.hidden=true;
+  });
   inp.addEventListener('input',()=>{
-    if(inp.value.trim())return;
-    sug.hidden=true;
+    clearTimeout(tm);
+    if(inp.value.trim()){tm=setTimeout(buscar,250);return}  // sugiere mientras se escribe
+    seq++;lista=[];sug.hidden=true;
     if(estado.zona){estado.zona=null;estado.zonaNombre='';if(mapa)mapa.fitBounds(LATAM);render()} // al borrar el texto se quita la zona
   });
-  inp.nextElementSibling.addEventListener('click',buscar);
+  inp.addEventListener('focus',()=>{if(lista.length&&inp.value.trim()){sug.hidden=false}});
+  inp.nextElementSibling.addEventListener('click',()=>{if(lista.length)ir(lista[0]);else buscar()});
   sug.addEventListener('click',e=>{const b=e.target.closest('.opt');if(b)ir(lista[+b.dataset.i])});
   document.addEventListener('click',e=>{if(!e.target.closest('#ubi,#sug,#ubi+svg'))sug.hidden=true});
 })();
