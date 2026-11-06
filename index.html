@@ -788,25 +788,33 @@ iniciarMapa();render();cargarPublicadas();
   const inp=$('#ubi'),sug=$('#sug');
   let lista=[],act=-1,tm=0,ctl=null,seq=0;
   const msg=t=>{const p=document.createElement('p');p.className='msg';p.textContent=t;sug.replaceChildren(p)};
-  const unico=a=>[...new Set(a.filter(Boolean))];
   let qAct='';
-  // texto tipo Urbania: "Miraflores, Lima, Perú"
+  // nombre del país: en español, salvo los países donde el inglés es lengua nativa (se muestran en inglés)
+  const PAIS={AR:'Argentina',BO:'Bolivia',BR:'Brasil',CL:'Chile',CO:'Colombia',CR:'Costa Rica',CU:'Cuba',DO:'República Dominicana',EC:'Ecuador',SV:'El Salvador',GT:'Guatemala',HN:'Honduras',MX:'México',NI:'Nicaragua',PA:'Panamá',PY:'Paraguay',PE:'Perú',PR:'Puerto Rico',UY:'Uruguay',VE:'Venezuela',HT:'Haití',SR:'Surinam',GF:'Guayana Francesa',CW:'Curazao',AW:'Aruba',GP:'Guadalupe',MQ:'Martinica',
+    US:'United States',CA:'Canada',JM:'Jamaica',BS:'Bahamas',BB:'Barbados',BZ:'Belize',GY:'Guyana',TT:'Trinidad and Tobago',AG:'Antigua and Barbuda',DM:'Dominica',GD:'Grenada',KN:'Saint Kitts and Nevis',LC:'Saint Lucia',VC:'Saint Vincent and the Grenadines'};
+  const TIPOS=new Set(['country','state','county','city','district','locality']); // solo lugares, sin calles ni números
+  // texto: País, Departamento/Estado, Distrito (en ese orden)
   const info=f=>{
-    const p=f.properties,calle=[p.street,p.housenumber].filter(Boolean).join(' ');
-    const tit=p.name||calle||p.district||p.locality||p.city||'';
-    const partes=unico([tit,p.name&&calle?calle:'',p.district||p.locality,p.city,p.state,p.country]);
-    return{tit,label:partes.join(', ')};
+    const p=f.properties,pais=PAIS[(p.countrycode||'').toUpperCase()]||p.country||'';
+    let partes;
+    if(p.type==='country')partes=[pais];
+    else if(p.type==='state')partes=[pais,p.name];
+    else partes=[pais,p.state,p.name];
+    partes=partes.filter(Boolean);
+    return{tit:p.name||pais,label:partes.join(', ')};
   };
+  // quita tildes sin cambiar el largo del texto (Perú = Peru al comparar)
+  const sinTilde=t=>t.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
   // pone en negrita lo que escribió la persona al inicio de cada palabra (sin usar innerHTML)
   function resaltar(texto,q){
-    const fr=document.createDocumentFragment(),esc=q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-    if(!esc){fr.append(texto);return fr}
-    const re=new RegExp('(^|[\\s,(-])('+esc+')','gi');
+    const fr=document.createDocumentFragment(),n=sinTilde(q).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    if(!n){fr.append(texto);return fr}
+    const re=new RegExp('(^|[\\s,(-])('+n+')','gi'),base=sinTilde(texto);
     let ult=0,m;
-    while((m=re.exec(texto))){
+    while((m=re.exec(base))){
       const i=m.index+m[1].length;
       fr.append(texto.slice(ult,i));
-      const s=document.createElement('strong');s.textContent=m[2];fr.append(s);
+      const s=document.createElement('strong');s.textContent=texto.slice(i,i+m[2].length);fr.append(s);
       ult=i+m[2].length;
     }
     fr.append(texto.slice(ult));
@@ -833,12 +841,12 @@ iniciarMapa();render();cargarPublicadas();
     if(!lista.length)msg('Buscando…');
     try{
       // busca solo en América (datos reales de OpenStreetMap); bbox = oeste,sur,este,norte
-      const r=await fetch('https://photon.komoot.io/api/?limit=8&bbox=-170,-57,-30,72&q='+encodeURIComponent(q),{signal:ctl.signal});
+      const r=await fetch('https://photon.komoot.io/api/?limit=10&bbox=-170,-57,-30,72&layer=country&layer=state&layer=county&layer=city&layer=district&layer=locality&q='+encodeURIComponent(q),{signal:ctl.signal});
       if(!r.ok)throw new Error(r.status);
       const j=await r.json();
       if(n!==seq)return;
       const vistos=new Set();
-      lista=(j.features||[]).filter(f=>{const {tit,label}=info(f);if(!tit||vistos.has(label))return false;vistos.add(label);return true});
+      lista=(j.features||[]).filter(f=>{if(f.properties.type&&!TIPOS.has(f.properties.type))return false;const {tit,label}=info(f);if(!tit||vistos.has(label))return false;vistos.add(label);return true});
     }catch(e){if(e.name==='AbortError')return;msg('No se pudo buscar. Revisa tu conexión a internet.');return}
     pintar();
   }
