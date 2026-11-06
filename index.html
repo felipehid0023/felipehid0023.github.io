@@ -493,27 +493,7 @@ textarea.pf-i{height:92px;padding:10px 14px;resize:vertical;font-family:var(--bo
 <script>
 const WA='51903307861';
 const LATAM=[[-56,-118],[32,-34]]; // vista inicial: Latinoamérica
-const props=[
-  {id:1,img:'depto1.webp',op:'alquiler',tipo:'Departamento',precio:1000,mon:'S/',m2:61,est:1,dorm:2,ban:1,dir:'Av. Brasil 1840',zona:'Jesús María, Lima',am:['Gimnasio','Piscina','Parrilla','Áreas verdes'],desc:'Ejemplo',lat:-12.0700,lng:-77.0530},
-  {id:2,img:'depto2.webp',op:'alquiler',tipo:'Departamento',precio:10000,mon:'S/',m2:64,est:1,dorm:2,ban:2,dir:'Av. Larco 1150',zona:'Miraflores, Lima',am:['Gimnasio','Parrilla'],desc:'Ejemplo',lat:-12.1190,lng:-77.0300},
-  {id:5,img:'depto5.webp',op:'venta',tipo:'Departamento',precio:100000,mon:'S/',m2:72,est:1,dorm:2,ban:2,dir:'Av. Sucre 760',zona:'Magdalena del Mar, Lima',am:['Gimnasio','Áreas verdes'],desc:'Ejemplo',lat:-12.0900,lng:-77.0710},
-  {id:6,img:'casa1.webp',op:'alquiler',tipo:'Casa',precio:10000,mon:'S/',m2:180,est:2,dorm:4,ban:3,dir:'Jr. Domeyer 280',zona:'Barranco, Lima',am:['Parrilla','Áreas verdes'],desc:'Ejemplo',lat:-12.1400,lng:-77.0200},
-  {id:7,img:'terreno1.webp',op:'alquiler',tipo:'Terreno',precio:1000,mon:'S/',m2:300,dir:'Av. Los Cipreses 300',zona:'La Molina, Lima',am:[],desc:'Ejemplo',lat:-12.0850,lng:-76.9050},
-  {id:8,img:'oficina1.webp',op:'alquiler',tipo:'Oficina',precio:1000,mon:'S/',m2:85,est:1,ban:2,dir:'Av. Javier Prado Este 480',zona:'San Isidro, Lima',am:['Gimnasio'],desc:'Ejemplo',lat:-12.0935,lng:-77.0270},
-  {id:9,img:'local1.webp',op:'alquiler',tipo:'Local comercial',precio:10000,mon:'S/',m2:120,est:0,ban:1,dir:'Av. Benavides 1580',zona:'Miraflores, Lima',am:[],desc:'Ejemplo',lat:-12.1275,lng:-77.0225},
-  {id:10,img:'industrial1.webp',op:'alquiler',tipo:'Local industrial',precio:10000,mon:'S/',m2:600,est:2,ban:2,dir:'Av. Argentina 3200',zona:'Callao, Lima',am:[],desc:'Ejemplo',lat:-12.0480,lng:-77.1180},
-  {id:11,img:'cochera1.webp',op:'alquiler',tipo:'Cochera',precio:100,mon:'S/',m2:15,est:1,dir:'Jr. Schell 320',zona:'Miraflores, Lima',am:[],desc:'Ejemplo',lat:-12.1215,lng:-77.0290},
-  {id:15,img:'casa2.webp',op:'venta',tipo:'Casa',precio:1000000,mon:'S/',m2:220,est:3,dorm:4,ban:4,dir:'Av. El Polo 540',zona:'Santiago de Surco, Lima',am:['Piscina','Parrilla','Áreas verdes'],desc:'Ejemplo',lat:-12.1050,lng:-76.9800},
-  {id:16,img:'terreno2.webp',op:'venta',tipo:'Terreno',precio:100000,mon:'S/',m2:400,dir:'Av. Separadora Industrial 900',zona:'Ate, Lima',am:[],desc:'Ejemplo',lat:-12.0450,lng:-76.9500},
-  {id:17,img:'oficina2.webp',op:'venta',tipo:'Oficina',precio:100000,mon:'S/',m2:110,est:3,ban:2,dir:'Av. República de Panamá 3050',zona:'San Isidro, Lima',am:['Gimnasio'],desc:'Ejemplo',lat:-12.1010,lng:-77.0360},
-  {id:18,img:'local2.webp',op:'venta',tipo:'Local comercial',precio:100000,mon:'S/',m2:80,est:0,ban:1,dir:'Av. Petit Thouars 5200',zona:'Miraflores, Lima',am:[],desc:'Ejemplo',lat:-12.1180,lng:-77.0270},
-  {id:19,img:'industrial2.webp',op:'venta',tipo:'Local industrial',precio:1000000,mon:'S/',m2:800,est:3,ban:3,dir:'Av. Nicolás Ayllón 2800',zona:'Ate, Lima',am:[],desc:'Ejemplo',lat:-12.0400,lng:-76.9900},
-  {id:20,img:'cochera2.webp',op:'venta',tipo:'Cochera',precio:10000,mon:'S/',m2:14,est:1,dir:'Av. Salaverry 1900',zona:'Jesús María, Lima',am:[],desc:'Ejemplo',lat:-12.0850,lng:-77.0520},
- {id:21,img:'depto8.webp',op:'proyecto',tipo:'Departamento',precio:100000,mon:'S/',m2:58,est:1,dorm:2,ban:2,dir:'Av. Brasil 2200',zona:'Pueblo Libre, Lima',am:['Gimnasio','Áreas verdes'],desc:'Ejemplo',lat:-12.0760,lng:-77.0630},
- {id:22,img:'casa2.webp',op:'proyecto',tipo:'Casa',precio:1000000,mon:'S/',m2:150,est:2,dorm:3,ban:3,dir:'Av. Los Eucaliptos 140',zona:'La Molina, Lima',am:['Parrilla','Áreas verdes'],desc:'Ejemplo',lat:-12.0820,lng:-76.9120},
- {id:23,img:'terreno2.webp',op:'proyecto',tipo:'Terreno',precio:10000,mon:'S/',m2:200,dir:'Km 32 Panamericana Sur',zona:'Lurín, Lima',am:[],desc:'Ejemplo',lat:-12.2740,lng:-76.8700},
- {id:24,img:'oficina2.webp',op:'proyecto',tipo:'Oficina',precio:100000,mon:'S/',m2:45,est:1,ban:1,dir:'Av. Javier Prado Oeste 1200',zona:'Magdalena del Mar, Lima',am:['Gimnasio'],desc:'Ejemplo',lat:-12.0930,lng:-77.0590}
-];
+const props=[]; // sin ejemplos: solo se muestran los anuncios aprobados en Supabase
 // cada propiedad tiene 3 fotos: la primera es `img`; las otras dos se buscan como nombre-2.webp y nombre-3.webp en la misma carpeta (ej.: depto1.webp, depto1-2.webp, depto1-3.webp)
 props.forEach(p=>{const b=p.img.replace(/\.webp$/,'');p.imgs=[p.img,b+'-2.webp',b+'-3.webp']});
 const plural={Departamento:'departamentos',Casa:'casas',Terreno:'terrenos','Local comercial':'locales comerciales',Oficina:'oficinas',Cochera:'cocheras','Local industrial':'locales industriales'};
@@ -901,8 +881,8 @@ $('#list').addEventListener('pointerout',e=>{const c=e.target.closest('.card');i
   const montarTS=(n=0)=>{
     if(tsId!==null||TS_SITEKEY.startsWith('PEGA'))return;
     if(!window.turnstile){if(n<50)setTimeout(()=>montarTS(n+1),200);return}
-    tsId=turnstile.render('#pf-ts',{sitekey:TS_SITEKEY,theme:'dark',language:'es',appearance:'interaction-only',
-      callback:t=>{tsToken=t},'expired-callback':()=>{tsToken=null},'error-callback':()=>{tsToken=null}});
+    tsId=turnstile.render('#pf-ts',{sitekey:TS_SITEKEY,theme:'dark',language:'es',appearance:'always',
+      callback:t=>{tsToken=t;say('')},'expired-callback':()=>{tsToken=null},'error-callback':c=>{tsToken=null;console.warn('Turnstile error',c);say('Cloudflare no pudo verificar (código '+c+'). Recarga la página e inténtalo de nuevo.')}});
   };
   const nuevoTS=()=>{tsToken=null;if(tsId!==null&&window.turnstile)turnstile.reset(tsId)};
   const esperarTS=async()=>{for(let i=0;i<75&&!tsToken;i++)await new Promise(r=>setTimeout(r,200));return tsToken};
