@@ -237,7 +237,7 @@ button{font:inherit;color:inherit}
 .map{position:relative;isolation:isolate;display:flex;flex-direction:column;height:calc(100vh - 190px);min-height:360px;overflow:hidden;
   border:1px solid var(--linea);border-radius:28px;corner-shape:squircle}
 .canvas{position:relative;flex:1;min-height:0;background:var(--negro)}
-#mapa{position:absolute;inset:0;background:#e9e7e1;font-family:var(--body)}
+#mapa{position:absolute;inset:0;background:var(--negro);font-family:var(--body)}
 #ubi+svg{pointer-events:auto;cursor:pointer}
 .sug{position:absolute;top:calc(100% + 8px);left:0;z-index:60;width:max(100%,340px);max-width:min(460px,calc(100vw - 48px));padding:8px;display:grid;gap:2px;background:var(--negro);
   border:1px solid var(--linea);border-radius:22px;corner-shape:squircle;box-shadow:0 24px 60px -20px rgba(0,0,0,.9)}
@@ -277,7 +277,7 @@ html.mg-on,html.mg-on body{overflow:hidden} /* Ver mapa: sin barra de desplazami
 .mcard{position:absolute;left:16px;bottom:16px;z-index:900;width:min(380px,calc(100% - 32px));height:calc(100% - 32px);display:flex;flex-direction:column}
 .mcard[hidden]{display:none}
 /* tarjeta única: mitad imagen, mitad información (más pequeña para que quepa todo); el corazón arriba a la derecha de la información */
-.mcard .card{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
+.mcard .card{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;background:var(--negro)}
 .mcard .pic{flex:1 1 0;min-height:0;border-right:0;border-bottom:1px solid var(--blanco)}
 .mcard .body{position:relative;flex:1 1 0;min-height:0;gap:3px;padding:12px 16px 14px;font-size:clamp(11px,1.7vh,14px);overflow:hidden}
 .mcard .heart{top:8px;right:10px;width:30px;height:30px}
@@ -304,11 +304,11 @@ html.mg-on,html.mg-on body{overflow:hidden} /* Ver mapa: sin barra de desplazami
 .pin::after{content:"";position:absolute;left:50%;top:calc(100% + 8px);translate:-50% 0;width:16px;height:16px;box-sizing:border-box;border:3px solid #fff;border-radius:50%;background:var(--pc);box-shadow:0 1px 4px rgba(0,0,0,.35);transition:background .2s}
 .pin.on,.pin:hover,.pin.sel{--pc:var(--verde);color:var(--negro)}
 .pin.on,.pin:hover{scale:1.1}
-.leaflet-bar,.leaflet-bar a{border-color:rgba(0,0,0,.15)!important}
-.leaflet-bar a{background:#fff!important;color:#1a1a1a!important}
-.leaflet-bar a:hover{background:#f1f1f1!important}
-.leaflet-control-attribution{background:rgba(255,255,255,.85)!important;color:#555!important}
-.leaflet-control-attribution a{color:#0b5f45!important}
+.leaflet-bar,.leaflet-bar a{border-color:var(--linea)!important}
+.leaflet-bar a{background:var(--negro)!important;color:var(--blanco)!important}
+.leaflet-bar a:hover{color:var(--verde)!important}
+.leaflet-control-attribution{background:rgba(26,26,26,.85)!important;color:var(--suave)!important}
+.leaflet-control-attribution a{color:var(--verde)!important}
 .vm{display:flex;justify-content:space-between;align-items:center;padding:18px 22px;border-top:1px solid var(--linea);font-weight:700;transition:color .2s}
 .vm:hover{color:var(--verde)}
 .vm svg{width:20px;height:20px}
@@ -496,7 +496,7 @@ textarea.pf-i{height:92px;padding:10px 14px;resize:vertical;font-family:var(--bo
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
 <script>
 const WA='51903307861';
-const LATAM=[[-58,-170],[75,170]]; // vista inicial: todo el mundo (el nombre LATAM se conserva por el resto del código)
+const LATAM=[[-56,-135],[58,-34]]; // vista inicial: América (el nombre LATAM se conserva por el resto del código)
 const props=[]; // sin ejemplos: solo se muestran los anuncios aprobados en Supabase
 // cada propiedad tiene 3 fotos: la primera es `img`; las otras dos se buscan como nombre-2.webp y nombre-3.webp en la misma carpeta (ej.: depto1.webp, depto1-2.webp, depto1-3.webp)
 props.forEach(p=>{const b=p.img.replace(/\.webp$/,'');p.imgs=[p.img,b+'-2.webp',b+'-3.webp']});
@@ -543,12 +543,12 @@ async function cargarPublicadas(){
 const estado={op:'alquiler',tipo:'Departamento',mon:'PEN',desde:0,hasta:0,zona:null,zonaNombre:'',mf:{sup:0,dorm:0,ban:0,est:0},orden:-1}; // orden: -1 = mayor precio (por defecto), 1 = menor precio
 let fav=new Set(), mapa=null, capa=null, marcas={}, visibles=[], selId=null;
 
-/* mapa real: Leaflet + mapa claro de CARTO (Voyager) (datos de OpenStreetMap), centrado en Lima */
+/* mapa real: Leaflet + mapa oscuro de CARTO (datos de OpenStreetMap), centrado en Lima */
 function iniciarMapa(){
   if(!window.L)return;
   mapa=L.map('mapa',{zoomSnap:.25,minZoom:2,dragging:!L.Browser.mobile});
   mapa.fitBounds(LATAM,{animate:false});
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{subdomains:'abcd',maxZoom:19,
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{subdomains:'abcd',maxZoom:19,
     attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>'}).addTo(mapa);
   capa=L.layerGroup().addTo(mapa);
   mapa.on('zoomend',()=>pintar(visibles));
@@ -641,7 +641,7 @@ function render(){
   if(!r.some(x=>x.id===selId))selId=r.length?r[0].id:null;
   const may=t=>t.charAt(0).toUpperCase()+t.slice(1); // primera letra de cada elemento elegido en mayúscula
   const nom=may(r.length===1?tipo:plural[tipo]);
-  $('#titulo').textContent=`${r.length} ${nom} en ${may(op)} en ${zona?may(estado.zonaNombre||'esta zona'):'todo el mundo'}`;
+  $('#titulo').textContent=`${r.length} ${nom} en ${may(op)} en ${zona?may(estado.zonaNombre||'esta zona'):'América'}`;
   $('#list').innerHTML=r.length?r.map(p=>cardHTML(p,false)).join(''):
     `<div class="vacio">No hay propiedades con estos filtros.</div>`;
   pintar(r);
@@ -832,8 +832,8 @@ iniciarMapa();render();cargarPublicadas();
     sug.hidden=false;
     if(!lista.length)msg('Buscando…');
     try{
-      // busca en todo el mundo (datos reales de OpenStreetMap)
-      const r=await fetch('https://photon.komoot.io/api/?limit=8&q='+encodeURIComponent(q),{signal:ctl.signal});
+      // busca solo en América (datos reales de OpenStreetMap); bbox = oeste,sur,este,norte
+      const r=await fetch('https://photon.komoot.io/api/?limit=8&bbox=-170,-57,-30,72&q='+encodeURIComponent(q),{signal:ctl.signal});
       if(!r.ok)throw new Error(r.status);
       const j=await r.json();
       if(n!==seq)return;
