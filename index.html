@@ -638,7 +638,7 @@ function render(){
   const nom=may(r.length===1?tipo:plural[tipo]);
   $('#titulo').textContent=`${r.length} ${nom} en ${may(op)} en ${zona?may(estado.zonaNombre||'esta zona'):'Lima'}`;
   $('#list').innerHTML=r.length?r.map(p=>cardHTML(p,false)).join(''):
-    `<div class="vacio">No hay propiedades con estos filtros. Cambia la búsqueda o <a href="${wa('Hola, busco una propiedad en Lima y no la encuentro en la página')}" target="_blank" rel="noopener">escríbenos por WhatsApp</a>.</div>`;
+    `<div class="vacio">No hay propiedades con estos filtros.</div>`;
   pintar(r);
   mostrarSel(false);
 }
