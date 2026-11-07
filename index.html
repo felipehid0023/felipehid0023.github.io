@@ -112,7 +112,7 @@ NOTAS DEL ARCHIVO (todas las notas van aquí arriba)
    Esta revisión está solo en la página: para que un robot tampoco pueda saltársela, la función "publicar" de Supabase (funcion-publicar.ts) debería revisar el país de lat/lng igual.
    Mientras tanto, nada se muestra sin que lo apruebes tú (estado "aprobada").
 16. CONTORNO DE LA CAPITAL: al elegir una opción de Ubicación, además de ir allí, el mapa dibuja el borde de esa capital (línea color 2 y relleno muy suave). El límite se pide a Nominatim (OpenStreetMap, `polygon_geojson`) en la función `limite`; al llegar, el mapa se encuadra a ese borde y la lista se filtra por su área. Si Nominatim no responde en 6 segundos o solo devuelve un punto, no se dibuja nada y todo sigue como antes. Borrar el texto de Ubicación quita el borde.
-   LO ELEGIDO EN EL MAPA (pin elegido, con el mouse encima, o círculo de grupo con el mouse): color 2 con menos luminosidad (`--verde-oscuro`, se cambia en :root); el texto siempre es color 3.
+   PINES Y GRUPOS DEL MAPA: fondo color 2 y texto color 1. Al elegir un pin (o pasar el mouse por un pin o un círculo de grupo) el fondo sigue en color 2 y el texto pasa a color 3.
 -->
 <html lang="es">
 <head>
@@ -129,7 +129,7 @@ NOTAS DEL ARCHIVO (todas las notas van aquí arriba)
 :root{
   --sep:20px; /* separación única entre sqcircles (filtros, tarjetas, mapa, Ordenar) */
   --negro:#1a1a1a; --verde:#14eb4a; --blanco:#e8fded;
-  --verde-oscuro:color-mix(in srgb,var(--verde) 55%,var(--negro)); /* el verde (color 2) con menos luminosidad: para lo elegido en el mapa */ --linea:rgba(232,253,237,.2); --suave:rgba(232,253,237,.66); --verde-t:rgba(20,235,74,.14);
+  --linea:rgba(232,253,237,.2); --suave:rgba(232,253,237,.66); --verde-t:rgba(20,235,74,.14);
   --display:'Bricolage Grotesque',system-ui,sans-serif; --body:'Instrument Sans',system-ui,sans-serif;
   box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
 }
@@ -144,8 +144,8 @@ button{font:inherit;color:inherit}
 /* cabecera */
 .top{border-bottom:1px solid var(--linea)} /* mismo gris de las demás líneas (bordes de filtros y tarjetas) */
 .top .wrap{padding-block:var(--sep);display:flex;align-items:center;justify-content:space-between;gap:var(--sep)} /* mismo espacio (sep) arriba y abajo del logo */
-.logo{display:flex;align-items:center;gap:9.6px;font:800 19.2px/24.864px var(--display);letter-spacing:-.03em} /* x0.8; line-height = alto del ícono, así el espacio de arriba y abajo es exactamente sep */
-.logo svg{width:30.912px;height:24.864px;flex:none} /* x1.2 del anterior (25.76 x 20.72) */
+.logo{display:flex;align-items:center;gap:14.4px;height:24.864px;font:800 28.8px/24.864px var(--display);letter-spacing:-.03em} /* x1.5 de icono y texto; el alto del contenedor (24.864px) NO cambia: lo que crece se desborda hacia arriba y abajo dentro del espacio (sep) de la cabecera, así la cabecera mide lo mismo */ /* x0.8; line-height = alto del ícono, así el espacio de arriba y abajo es exactamente sep */
+.logo svg{width:46.368px;height:37.296px;flex:none} /* 30.912 x 24.864 por 1.5 */ /* x1.2 del anterior (25.76 x 20.72) */
 
 /* filtros: Ubicación ocupa el espacio que sobra; los otros 4 miden lo mismo (0.8 del ancho que tenían), ícono a la derecha */
 .filters{position:relative;z-index:5;display:grid;grid-template-columns:minmax(0,1fr) repeat(4,calc(min(1272px,100% - 72px) * .16));gap:var(--sep);margin:var(--sep) 0 var(--sep)}
@@ -227,19 +227,19 @@ button{font:inherit;color:inherit}
 @keyframes entra{from{opacity:.4}to{opacity:1}}
 .prow{display:flex;align-items:center;flex-wrap:wrap;column-gap:18px;padding-right:44px} /* precio y, en la tarjeta de arriba, "Seleccionado en el mapa" a su derecha */
 .selnota{margin:0;color:var(--verde);font:800 20.4px/1.05 var(--display);letter-spacing:-.03em;white-space:nowrap} /* 0.6 del tamaño del precio, en una sola línea */
-.pic{position:relative;overflow:hidden;border-right:1px solid var(--blanco)} /* línea vertical color 3 entre imagen y contenido */
+.pic{position:relative;overflow:hidden;border-right:1px solid var(--linea)} /* línea vertical gris (la misma de los bordes) entre imagen y contenido */
 .pics{position:absolute;inset:0;display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain}
 .pics::-webkit-scrollbar{display:none}
 .sl{position:relative;flex:0 0 100%;scroll-snap-align:start}
 .sl img,.sl .ph{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.pn{position:absolute;top:50%;translate:0 -50%;z-index:2;display:grid;place-items:center;width:36px;height:36px;padding:0;border:1px solid var(--linea);border-radius:50%;background:rgba(26,26,26,.72);color:var(--blanco);cursor:pointer;transition:border-color .2s,color .2s}
+.pn{position:absolute;top:50%;translate:0 -50%;z-index:2;display:grid;place-items:center;width:36px;height:36px;padding:0;border:1px solid var(--linea);border-radius:50%;background:rgba(26,26,26,.72);color:var(--blanco);cursor:pointer}
 .pn.prev{left:12px}.pn.next{right:12px}
-.pn:hover,.pn:focus-visible{border-color:var(--verde);color:var(--verde)}
+/* las flechas < > son color 3 y no cambian al pasar el mouse ni al pulsarlas (siguen funcionando igual) */
 .pn svg{width:18px;height:18px}
 .dots{position:absolute;left:50%;bottom:12px;translate:-50% 0;z-index:2;display:flex;gap:10px;padding:7px 11px;border-radius:999px;background:rgba(26,26,26,.62)}
 .dot{position:relative;width:8px;height:8px;padding:0;border:0;border-radius:50%;background:rgba(232,253,237,.55);cursor:pointer;transition:background .2s,scale .2s}
 .dot::before{content:"";position:absolute;inset:-7px}
-.dot[aria-current="true"]{background:var(--verde);scale:1.25}
+.dot[aria-current="true"]{background:var(--blanco);scale:1.25}
 .ph{display:grid;place-items:center;background:var(--negro)}
 .ph span{padding:8px 14px;border:1px dashed var(--suave);border-radius:999px;font-size:13px;color:var(--suave)}
 .body{display:flex;flex-direction:column;gap:6px;min-width:0;padding:18px 22px}
@@ -309,7 +309,7 @@ html.mg-on,html.mg-on body{overflow:hidden} /* Ver mapa: sin barra de desplazami
 /* tarjeta única: mitad imagen, mitad información (más pequeña para que quepa todo); el corazón arriba a la derecha de la información */
 .mcard .card{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;background:var(--negro)}
 .mcard .card,.mcard .card:hover,.mcard .card.top{border:0;border-radius:0;box-shadow:none} /* sin borde verde: la tarjeta llena el fondo (el redondeo lo da el contenedor del mapa) */
-.mcard .pic{flex:1 1 0;min-height:0;border-right:0;border-bottom:1px solid var(--blanco)}
+.mcard .pic{flex:1 1 0;min-height:0;border-right:0;border-bottom:1px solid var(--linea)}
 .mcard .body{position:relative;flex:1 1 0;min-height:0;gap:3px;padding:12px 16px 14px;font-size:clamp(11px,1.7vh,14px);overflow:hidden}
 .mcard .heart{top:8px;right:10px;width:30px;height:30px}
 .mcard .heart svg{width:22px;height:22px}
@@ -326,13 +326,13 @@ html.mg-on,html.mg-on body{overflow:hidden} /* Ver mapa: sin barra de desplazami
 .leaflet-control-zoom-in,.leaflet-control-zoom-out{font:700 28px/42px var(--body)!important;text-indent:0!important}
 /* círculo que agrupa varias propiedades cercanas */
 .grupo{position:absolute;left:0;top:0;translate:-50% -50%;min-width:36px;height:36px;padding:0 9px;box-sizing:border-box;border-radius:999px;display:flex;align-items:center;justify-content:center;
-  background:var(--verde);color:var(--blanco);font:700 14px var(--body);cursor:pointer;box-shadow:0 0 0 5px rgba(20,235,74,.28),0 2px 6px rgba(0,0,0,.28);transition:background .2s}
-.grupo:hover{background:var(--verde-oscuro)}
+  background:var(--verde);color:var(--negro);font:700 14px var(--body);cursor:pointer;box-shadow:0 0 0 5px rgba(20,235,74,.28),0 2px 6px rgba(0,0,0,.28);transition:background .2s}
+.grupo:hover{background:var(--verde);color:var(--blanco)}
 .pinwrap{background:none;border:0}
 /* etiqueta verde oscuro con el punto exacto debajo (el punto marca la ubicación real) */
-.pin{--pc:var(--verde);position:absolute;left:0;top:0;translate:-50% calc(-100% - 16px);transform-origin:50% calc(100% + 16px);padding:6px 12px;border-radius:8px;background:var(--pc);color:var(--blanco);font:700 14px var(--body);white-space:nowrap;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.28);transition:background .2s,color .2s,scale .2s}
+.pin{--pc:var(--verde);position:absolute;left:0;top:0;translate:-50% calc(-100% - 16px);transform-origin:50% calc(100% + 16px);padding:6px 12px;border-radius:8px;background:var(--pc);color:var(--negro);font:700 14px var(--body);white-space:nowrap;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.28);transition:background .2s,color .2s,scale .2s}
 .pin::after{content:"";position:absolute;left:50%;top:calc(100% + 8px);translate:-50% 0;width:16px;height:16px;box-sizing:border-box;border:3px solid var(--blanco);border-radius:50%;background:var(--pc);box-shadow:0 1px 4px rgba(0,0,0,.35);transition:background .2s}
-.pin.on,.pin:hover,.pin.sel{--pc:var(--verde-oscuro);color:var(--blanco)}
+.pin.on,.pin:hover,.pin.sel{--pc:var(--verde);color:var(--blanco)}
 .pin.on,.pin:hover{scale:1.1}
 .leaflet-bar,.leaflet-bar a{border-color:var(--linea)!important}
 .leaflet-bar a,.leaflet-bar a:hover,.leaflet-bar a:focus,.leaflet-bar a:active,.leaflet-bar a.leaflet-disabled{background:var(--negro)!important;color:var(--verde)!important;opacity:1!important;box-shadow:none!important;outline:0!important;filter:none!important;-webkit-tap-highlight-color:transparent;width:44px!important;height:44px!important;line-height:42px!important}
@@ -396,7 +396,7 @@ textarea.pf-i{height:92px;padding:10px 14px;resize:vertical;font-family:var(--bo
 }
 @media(max-width:640px){
   .card{grid-template-columns:1fr;grid-template-rows:minmax(230px,1fr) auto} /* la foto absorbe todo el espacio libre; los datos quedan compactos, sin hueco antes del botón */
-  .pic{min-height:230px}
+  .pic{min-height:230px;border-right:0;border-bottom:1px solid var(--linea)}
   .price{font-size:30px}
 }
 @media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}.card.cambia{animation:none}}
