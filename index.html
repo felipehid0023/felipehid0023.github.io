@@ -3,7 +3,7 @@
 NOTAS DEL ARCHIVO (todas las notas van aquí arriba)
 
 1. MARCA: "Hogar Hogareña". Sitio de una inmobiliaria con listado de propiedades en Lima.
-   Contacto por WhatsApp y teléfono: 51903307861 (se cambia en la constante WA, al final del archivo, en el bloque de JavaScript).
+   Contacto: cada anuncio usa el WhatsApp que escribió quien lo publicó en el formulario. En el código no hay ningún número fijo; si un anuncio no trae número, su tarjeta no muestra el botón de WhatsApp.
 
 2. COLORES (solo 3, en todo el sitio):
    - Color 1: negro  #1a1a1a  hsl(0, 0%, 10%)    -> fondo y textos sobre verde
@@ -337,8 +337,8 @@ html.mg-on,html.mg-on body{overflow:hidden} /* Ver mapa: sin barra de desplazami
 .leaflet-bar,.leaflet-bar a{border-color:var(--linea)!important}
 .leaflet-bar a,.leaflet-bar a:hover,.leaflet-bar a:focus,.leaflet-bar a:active,.leaflet-bar a.leaflet-disabled{background:var(--negro)!important;color:var(--verde)!important;opacity:1!important;box-shadow:none!important;outline:0!important;filter:none!important;-webkit-tap-highlight-color:transparent;width:44px!important;height:44px!important;line-height:42px!important}
 /* los + y − hacen su función pero NO cambian de aspecto al pasar el mouse, pulsarlos o llegar al límite del zoom */
-.leaflet-control-attribution{background:rgba(26,26,26,.85)!important;color:var(--verde)!important}
-.leaflet-control-attribution,.leaflet-control-attribution a,.leaflet-control-attribution span{color:var(--verde)!important}
+.leaflet-container .leaflet-control-attribution{background:var(--negro)!important;color:var(--verde)!important} /* fondo color 1 sólido, letra color 2 */
+.leaflet-container .leaflet-control-attribution,.leaflet-container .leaflet-control-attribution a,.leaflet-container .leaflet-control-attribution span{color:var(--verde)!important}
 .vm{display:flex;justify-content:space-between;align-items:center;padding:18px 22px;border-top:1px solid var(--linea);font-weight:700;transition:color .2s}
 .vm:hover{color:var(--verde)}
 .vm svg{width:20px;height:20px}
@@ -525,7 +525,6 @@ textarea.pf-i{height:92px;padding:10px 14px;resize:vertical;font-family:var(--bo
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
 <script>
-const WA='51903307861';
 const LATAM=[[-56,-135],[58,-34]]; // vista inicial: América (el nombre LATAM se conserva por el resto del código)
 const props=[]; // sin ejemplos: solo se muestran los anuncios aprobados en Supabase
 // cada propiedad tiene 3 fotos: la primera es `img`; las otras dos se buscan como nombre-2.webp y nombre-3.webp en la misma carpeta (ej.: depto1.webp, depto1-2.webp, depto1-3.webp)
@@ -540,7 +539,7 @@ const I={
 const $=s=>document.querySelector(s);
 const fmt=n=>n.toLocaleString('en-US');
 const corto=n=>n>=1e6?+(n/1e6).toFixed(2)+'M':n>=1e3?+(n/1e3).toFixed(n<1e4?1:0)+'K':String(n);
-const num=n=>{n=String(n||WA);return /^54[1-8]\d{9}$/.test(n)?'549'+n.slice(2):n}; // Argentina: el celular lleva un 9 después del 54 (54 + 10 dígitos pasa a 54 9 + 10 dígitos)
+const num=n=>{n=String(n||'');return /^54[1-8]\d{9}$/.test(n)?'549'+n.slice(2):n}; // Argentina: el celular lleva un 9 después del 54 (54 + 10 dígitos pasa a 54 9 + 10 dígitos)
 const wa=(t,n)=>'https://wa.me/'+num(n)+'?text='+encodeURIComponent(t);
 /* ===== Supabase: anuncios que publica la gente (ver nota 9 y el archivo supabase-completo.sql) ===== */
 const SB_URL='https://gjvmpvzekigveggbsyfe.supabase.co';  // ej.: 'https://abcdefgh.supabase.co'  (Project Settings > API > Project URL)
@@ -654,7 +653,7 @@ const cardHTML=(p,top,sinNota)=>`
         <p class="desc">${esc(p.desc)}</p>
         <div class="foot">
           <div class="acts">
-            <a class="wa" href="${wa(`Hola, me interesa el ${p.tipo.toLowerCase()} en ${p.op}: ${p.dir}, ${p.zona}`,p.tel)}" target="_blank" rel="noopener">WhatsApp ${I.wa}</a>
+            ${p.tel?`<a class="wa" href="${wa(`Hola, me interesa el ${p.tipo.toLowerCase()} en ${p.op}: ${p.dir}, ${p.zona}`,p.tel)}" target="_blank" rel="noopener">WhatsApp ${I.wa}</a>`:''}
           </div>
         </div>
       </div>
