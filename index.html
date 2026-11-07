@@ -115,6 +115,8 @@ NOTAS DEL ARCHIVO (todas las notas van aquí arriba)
    PINES Y GRUPOS DEL MAPA: fondo color 2 y texto color 1. Al elegir un pin (o pasar el mouse por un pin o un círculo de grupo) el fondo sigue en color 2 y el texto pasa a color 3.
 17. TARJETA VACÍA EN VER MAPA: en pantalla ancha, al abrir Ver mapa la tarjeta de la izquierda siempre ocupa su espacio (el mapa empieza a su derecha). Si no hay propiedades (por la zona o los filtros) queda vacía: fondo color 1 y solo el aviso "No hay propiedades con estos filtros." centrado. En celular, donde la tarjeta taparía el mapa, no se muestra cuando está vacía.
 18. ESTADOS UNIDOS COMO "US": tanto en la lista de sugerencias como en la casilla al elegir, Estados Unidos aparece como "US, Estado, Capital" (el texto sale de `label` en `FILAS`). Se encuentra escribiendo US, United States o Estados Unidos; para el orden alfabético se sigue usando "United States" (`ord`), así que escribir "U" muestra primero sus opciones.
+19. (REEMPLAZADA POR LA NOTA 20: ya no hay autocompletado ni casilla de dirección) DIRECCIÓN EXACTA AL PUBLICAR: en el formulario, Dirección tiene autocompletado (Photon, OpenStreetMap; no Nominatim, que prohíbe autocompletar). Salen hasta 5 lugares reales de los 22 países (calles, edificios, locales; no ciudades ni distritos) y solo se puede enviar eligiendo uno. Ver la nota 20 para Zona, Dirección y el punto que se guarda. Esto reemplaza lo que decían las notas 9 y 15 sobre ubicar con Nominatim al enviar (ya no se usa: no hay "centro de la zona" como plan B). Photon público tiene límites de uso; con mucho tráfico conviene un proveedor con clave. La revisión del país en el servidor está en revision-pais-funcion-publicar.ts (hay que pegarla en la función "publicar" de Supabase). (Actualizado en la nota 20.)
+20. UBICACIÓN Y MAPA AL PUBLICAR: la casilla se llama Ubicación (antes Zona) y va primero; usa el mismo buscador de Ubicación (País, Estado, Ciudad; se comparte con `window.HH_UB`). Al elegirla, el teléfono cambia solo al código de ese país (mapa `NOMTEL`; la persona todavía puede cambiarlo) y el mapa (el mismo de la página, sin propiedades) se ve siempre: sin ubicación elegida muestra solo el aviso "No hay propiedades con estos filtros."; al elegirla se encuadra en ella y dibuja su borde. No hay casilla de Dirección: la persona toca en el mapa el lugar de su propiedad, y solo se acepta dentro de la ubicación elegida (su borde si Nominatim lo dio; si no, su caja). Ese punto es el que se guarda (lat/lng). El texto `dir` del anuncio se saca al enviar de la calle más cercana a ese punto (`nombreDe`, Nominatim reverse); si no responde en 5 s queda "Ubicación marcada en el mapa, <ciudad>". En la tabla, `zona` guarda el texto elegido (ej.: Perú, Junín, Huancayo).
 -->
 <html lang="es">
 <head>
@@ -293,7 +295,7 @@ button{font:inherit;color:inherit}
   .map{height:calc(100vh - 5 * var(--sep) - 61.864px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));height:calc(100dvh - 5 * var(--sep) - 61.864px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));min-height:360px}
 }
 /* mapa a todo el ancho (Ver mapa) */
-button.vm{width:100%;background:none;border:0;border-top:1px solid var(--linea);color:inherit;font:700 16px var(--body);cursor:pointer;text-align:left}
+button.vm{width:100%;background:none;border:0;border-top:1px solid var(--linea);color:var(--verde);font:700 16px var(--body);cursor:pointer;text-align:left}
 .layout.mg{grid-template-columns:1fr}
 html.mg-on,html.mg-on body{overflow:hidden} /* Ver mapa: sin barra de desplazamiento (el lugar de la barra sigue reservado por scrollbar-gutter, así nada se mueve) */
 .layout.mg>section{display:none}
@@ -309,22 +311,22 @@ html.mg-on,html.mg-on body{overflow:hidden} /* Ver mapa: sin barra de desplazami
 @media(max-width:700px){.mcard.vacia{display:none}} /* en celular la tarjeta tapa el mapa: si está vacía no se muestra */
 /* pantalla ancha: la tarjeta tiene su propio espacio a la izquierda y el mapa empieza a su derecha (nada queda tapado por la tarjeta) */
 @media(min-width:701px){.canvas:has(#mcard:not([hidden])) #mapa{left:min(380px,100%)}.mcard{border-right:1px solid var(--linea)}}
-/* tarjeta única: mitad imagen, mitad información (más pequeña para que quepa todo); el corazón arriba a la derecha de la información */
+/* tarjeta única: mitad imagen, mitad información (texto grande: crece con el alto de la pantalla y aprovecha todo el espacio de la mitad de abajo); el corazón arriba a la derecha de la información */
 .mcard .card{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;background:var(--negro)}
 .mcard .card.sin{align-items:center;justify-content:center;padding:24px;text-align:center;color:var(--suave);font:500 16px/1.4 var(--body)} /* tarjeta vacía: solo el aviso, centrado */
 .mcard .card,.mcard .card:hover,.mcard .card.top{border:0;border-radius:0;box-shadow:none} /* sin borde verde: la tarjeta llena el fondo (el redondeo lo da el contenedor del mapa) */
 .mcard .pic{flex:1 1 0;min-height:0;border-right:0;border-bottom:1px solid var(--linea)}
-.mcard .body{position:relative;flex:1 1 0;min-height:0;gap:3px;padding:12px 16px 14px;font-size:clamp(11px,1.7vh,14px);overflow:hidden}
-.mcard .heart{top:8px;right:10px;width:30px;height:30px}
-.mcard .heart svg{width:22px;height:22px}
-.mcard .prow{padding-right:36px}
-.mcard .price{font-size:clamp(20px,3.4vh,28px)}
-.mcard .spec{gap:12px;margin:2px 0 0}
-.mcard .addr{margin:2px 0 0}
-.mcard .desc{white-space:normal;overflow:visible;text-overflow:clip;margin:2px 0 0;font-size:inherit;line-height:1.3}
-.mcard .foot{padding-top:8px}
-.mcard .wa{height:clamp(34px,5.4vh,44px);font-size:inherit}
-.mcard .wa svg{width:18px;height:18px}
+.mcard .body{position:relative;flex:1 1 0;min-height:0;gap:4px;padding:14px 18px 16px;font-size:clamp(15px,2.4vh,20px);overflow:hidden}
+.mcard .heart{top:10px;right:12px;width:36px;height:36px}
+.mcard .heart svg{width:26px;height:26px}
+.mcard .prow{padding-right:44px}
+.mcard .price{font-size:clamp(28px,4.8vh,42px)}
+.mcard .spec{gap:4px 16px;margin:4px 0 0}
+.mcard .addr{margin:4px 0 0}
+.mcard .desc{white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;margin:4px 0 0;font-size:inherit;line-height:1.3}
+.mcard .foot{padding-top:12px}
+.mcard .wa{height:clamp(44px,6.2vh,56px);font-size:inherit}
+.mcard .wa svg{width:22px;height:22px}
 /* + / − abajo a la derecha, justo encima del texto "Leaflet | © OpenStreetMap"; fondo negro y signos en color 2 (verde) */
 .leaflet-bottom.leaflet-right .leaflet-control-zoom{margin:0 10px 6px 0}  /* 10px + mitad del botón (22px) = 32px: el mismo centro que la flecha → de la barra de abajo */
 .leaflet-control-zoom-in,.leaflet-control-zoom-out{font:700 28px/42px var(--body)!important;text-indent:0!important}
@@ -344,7 +346,7 @@ html.mg-on,html.mg-on body{overflow:hidden} /* Ver mapa: sin barra de desplazami
 .leaflet-container .leaflet-control-attribution{background:var(--negro)!important;color:var(--verde)!important} /* fondo color 1 sólido, letra color 2 */
 .leaflet-container .leaflet-control-attribution,.leaflet-container .leaflet-control-attribution a,.leaflet-container .leaflet-control-attribution span{color:var(--verde)!important}
 .vm{display:flex;justify-content:space-between;align-items:center;padding:18px 22px;border-top:1px solid var(--linea);font-weight:700;transition:color .2s}
-.vm:hover{color:var(--verde)}
+.vm:hover,.vm:focus-visible,.vm:active{color:var(--blanco)} /* barra Ver mapa / Ver listado: texto y flecha en color 2; al seleccionarla (mouse encima, tecla o toque) pasan a color 3 */
 .vm svg{width:20px;height:20px}
 
 /* Publicar: botón de la cabecera y formulario (ventana modal) */
@@ -384,6 +386,18 @@ textarea.pf-i{height:92px;padding:10px 14px;resize:vertical;font-family:var(--bo
 .pf-th button{position:absolute;top:4px;right:4px;display:grid;place-items:center;width:22px;height:22px;padding:0;border:0;border-radius:50%;background:var(--negro);color:var(--blanco);font:700 14px/1 var(--body);cursor:pointer}
 .pf-add{display:grid;place-items:center;width:96px;height:96px;padding:0;background:none;border:1px dashed var(--suave);border-radius:16px;corner-shape:squircle;color:var(--blanco);font:500 28px/1 var(--body);cursor:pointer}
 .pf-add:hover{border-color:var(--verde);color:var(--verde)}
+.pf-ac{position:relative}
+.pf-ac .sug{top:calc(100% + 6px);z-index:70}
+.pf-l[hidden]{display:none}
+.pf-i[readonly]{color:var(--suave);cursor:default}
+.pf-i[readonly]:hover,.pf-i[readonly]:focus{border-color:var(--linea)}
+.pf-i:disabled{opacity:.5;cursor:not-allowed}
+.pf-i:disabled:hover{border-color:var(--linea)}
+#pf-mapa{height:260px;border:1px solid var(--linea);border-radius:16px;corner-shape:squircle;overflow:hidden;isolation:isolate;cursor:crosshair}
+#pf-mapa .pin{cursor:default}
+.pf-mw{position:relative}
+#pf-mapa-vacio{position:absolute;inset:0;z-index:5;display:grid;place-items:center;padding:24px;text-align:center;background:var(--negro);border:1px solid var(--linea);border-radius:16px;corner-shape:squircle;color:var(--suave);font:500 16px/1.4 var(--body)} /* sin ubicación elegida: solo el aviso, centrado */
+#pf-mapa-vacio[hidden]{display:none}
 .pf-msg{min-height:1.5em;margin:0;color:var(--verde);font:600 14px var(--body)}
 .pf-send{display:block;width:100%;height:48px;cursor:pointer;border:0;border-radius:16px;corner-shape:squircle;background:var(--verde);color:var(--negro);font:700 16px var(--body)}
 .pf-send:disabled{opacity:.55;cursor:wait}
@@ -505,8 +519,8 @@ textarea.pf-i{height:92px;padding:10px 14px;resize:vertical;font-family:var(--bo
       <label class="pf-l">Dormitorios<input class="pf-i dig" name="dorm" type="text" inputmode="numeric" maxlength="2" placeholder="0"></label>
       <label class="pf-l">Baños<input class="pf-i dig" name="ban" type="text" inputmode="numeric" maxlength="2" placeholder="0"></label>
       <label class="pf-l">Estacionamientos<input class="pf-i dig" name="est" type="text" inputmode="numeric" maxlength="2" placeholder="0"></label>
-      <label class="pf-l full">Zona<input class="pf-i" name="zona" type="text" maxlength="80" placeholder="Ej: Miraflores, Lima"></label>
-      <label class="pf-l full">Dirección<input class="pf-i" name="dir" type="text" maxlength="120" placeholder="Ej: Malecón Cisneros 1244"></label>
+      <div class="pf-l full">Ubicación<div class="pf-ac"><input class="pf-i" name="zona" type="text" maxlength="80" placeholder="País, Estado, Ciudad" autocomplete="off" aria-label="Ubicación" aria-controls="pf-zsug"><div class="sug" id="pf-zsug" role="listbox" hidden></div></div></div>
+      <div class="pf-l full" id="pf-mapa-box">Dirección, toca el lugar de tu propiedad<div class="pf-mw"><div id="pf-mapa"></div><div id="pf-mapa-vacio">No hay propiedades con estos filtros.</div></div></div>
       <label class="pf-l full">Descripción<textarea class="pf-i" name="descr" maxlength="250" placeholder="Cuenta lo más importante"></textarea></label>
       <div class="pf-l full">Tu WhatsApp o teléfono
         <div class="pf-tel">
@@ -848,6 +862,7 @@ iniciarMapa();render();cargarPublicadas();
   }
   window.HH_PAISES=Object.fromEntries(Object.keys(DATOS).map(c=>[c,ALIAS[c]||PAIS[c]])); // países donde se puede publicar (el formulario Publicar los usa)
   const alfa=(x,y)=>x.ord.localeCompare(y.ord,'es',{sensitivity:'base'});
+  window.HH_UB={FILAS,PAIS,normq,alfa,resaltar,limite}; // el formulario Publicar usa este mismo buscador para su campo Zona
   // negrita en lo que ya escribió la persona (siempre es el inicio del texto)
   function resaltar(texto,q){
     const fr=document.createDocumentFragment(),qn=normq(q);
@@ -1064,22 +1079,121 @@ $('#list').addEventListener('pointerout',e=>{const c=e.target.closest('.card');i
     pintarFotos();
   });
   pintarFotos();
-  const geo=async q=>{
-    const r=await fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&addressdetails=1&accept-language=es&q='+encodeURIComponent(q));
-    if(!r.ok)throw new Error(r.status);
-    const l=await r.json();return l[0]?{lat:+l[0].lat,lng:+l[0].lon,cc:((l[0].address||{}).country_code||'').toUpperCase()}:null;
-  };
+  /* Ubicación y lugar en el mapa. Primero se elige la UBICACIÓN con el mismo buscador de Ubicación de arriba (País, Estado, Ciudad; viene de HH_UB)
+     y el teléfono cambia solo al código de ese país. Luego aparece el mapa (el mismo de la página, sin nada publicado, encuadrado en esa ubicación):
+     se toca el lugar de la propiedad, solo dentro de la ubicación elegida (su borde si lo hay; si no, su caja). No hay casilla de dirección:
+     al enviar, el texto de la dirección sale de la calle más cercana a ese punto (Nominatim). */
+  const cajaMapa=$('#pf-mapa-box'),vacio=$('#pf-mapa-vacio'),zonaI=f.elements.zona,sugZ=$('#pf-zsug'),UB=window.HH_UB;
+  let zsel=null,listaZ=[],seqZ=0,mm=null,marcador=null,capaZ=null,punto=null;
+  // nombre con el que cada país aparece en el selector del teléfono
+  const NOMTEL={AR:'Argentina',BZ:'Belice',BO:'Bolivia',BR:'Brasil',CA:'Canada',CL:'Chile',CO:'Colombia',CR:'Costa Rica',EC:'Ecuador',SV:'El Salvador',US:'USA',GT:'Guatemala',HN:'Honduras',MX:'México',NI:'Nicaragua',PA:'Panamá',PY:'Paraguay',PE:'Perú',PR:'Puerto Rico',DO:'República Dominicana',UY:'Uruguay',VE:'Venezuela'};
+  const mensaje=t=>{const m=document.createElement('p');m.className='msg';m.textContent=t;return m};
+  // ¿el punto (x=lng, y=lat) cae dentro del borde de la ubicación? (polígono o multipolígono GeoJSON, con huecos)
+  const enAnillo=(x,y,r)=>{let d=false;for(let i=0,j=r.length-1;i<r.length;j=i++){const [xi,yi]=r[i],[xj,yj]=r[j];if((yi>y)!==(yj>y)&&x<(xj-xi)*(y-yi)/(yj-yi)+xi)d=!d}return d};
+  const enPol=(x,y,p)=>enAnillo(x,y,p[0])&&!p.slice(1).some(h=>enAnillo(x,y,h));
+  const enBorde=(x,y,g)=>g.type==='Polygon'?enPol(x,y,g.coordinates):g.coordinates.some(p=>enPol(x,y,p));
+  const cajaDe=g=>{let a=[180,90,-180,-90];(function rec(c){if(typeof c[0]==='number')a=[Math.min(a[0],c[0]),Math.min(a[1],c[1]),Math.max(a[2],c[0]),Math.max(a[3],c[1])];else c.forEach(rec)})(g.coordinates);return a}; // [oeste,sur,este,norte]
+  // UBICACIÓN: sugerencias del buscador de Ubicación
+  function pintarZ(q){
+    sugZ.hidden=false;
+    if(!listaZ.length){sugZ.replaceChildren(mensaje('No encontramos ese lugar.'));return}
+    sugZ.replaceChildren(...listaZ.map((r,i)=>{const b=document.createElement('button');b.type='button';b.className='opt';b.dataset.i=i;b.append(UB.resaltar(r.label,q));return b}));
+  }
+  function buscarZ(){
+    const q=zonaI.value,qn=UB.normq(q);
+    if(!qn){listaZ=[];sugZ.hidden=true;return}
+    listaZ=UB.FILAS.filter(r=>r.k.some(k=>k.startsWith(qn))).sort(UB.alfa).slice(0,5);
+    pintarZ(q);
+  }
+  // MAPA: aparece al elegir la ubicación, encuadrado en ella y con su borde dibujado
+  function ocultarMapa(){
+    punto=null;
+    if(mm){if(marcador)mm.removeLayer(marcador);if(capaZ)mm.removeLayer(capaZ)}
+    marcador=null;capaZ=null;vacio.hidden=false;
+  }
+  function mostrarMapa(z){
+    vacio.hidden=true;
+    if(!window.L)return;
+    const [w,s,e,n]=z.caja,b=L.latLngBounds([[s,w],[n,e]]);
+    if(!mm){
+      mm=L.map('pf-mapa',{zoomSnap:.5,minZoom:3,maxZoom:19,scrollWheelZoom:false,zoomControl:false,maxBoundsViscosity:1});
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,noWrap:true,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'}).addTo(mm);
+      L.control.zoom({position:'bottomright',zoomInTitle:'Acercar',zoomOutTitle:'Alejar'}).addTo(mm);
+      mm.on('click',ev=>marcar(ev.latlng));
+    }
+    mm.setMaxBounds(null);
+    if(z.gj)capaZ=L.geoJSON(z.gj,{interactive:false,style:{color:'#14eb4a',weight:3,opacity:1,lineJoin:'round',fillColor:'#14eb4a',fillOpacity:.1}}).addTo(mm);
+    setTimeout(()=>{mm.invalidateSize();mm.fitBounds(b,{animate:false,padding:[10,10],maxZoom:16});mm.setMaxBounds(b.pad(.5))},0);
+  }
+  function marcar(ll){
+    const z=zsel;if(!z)return;
+    const [w,s,e,n]=z.caja,dentro=z.gj?enBorde(ll.lng,ll.lat,z.gj):(ll.lng>=w&&ll.lng<=e&&ll.lat>=s&&ll.lat<=n);
+    if(!dentro){say('Marca un lugar dentro de la ubicación elegida.');return}
+    say('');punto={lat:ll.lat,lng:ll.lng};
+    if(marcador)marcador.setLatLng(ll);
+    else marcador=L.marker(ll,{keyboard:false,icon:L.divIcon({className:'pinwrap',iconSize:[0,0],html:'<span class="pin sel">Tu propiedad</span>'})}).addTo(mm);
+  }
+  async function elegirZona(r){
+    const t=++seqZ;
+    zsel=null;ocultarMapa();
+    zonaI.value=r.label.slice(0,80);sugZ.hidden=true;say('');
+    const i=PAISES.findIndex(x=>x[0]===NOMTEL[r.cc]);    // el teléfono pasa al código del país elegido (se puede cambiar a mano)
+    if(i>=0){f.elements.pais.selectedIndex=i;f.elements.pais.dispatchEvent(new Event('change'))}
+    const pol=UB.limite(r);                               // borde de la capital (el mismo que usa Ubicación)
+    let caja=null,cen=null;
+    try{                                                  // plan B: la caja que da Photon para esa ciudad
+      const c=new AbortController(),to=setTimeout(()=>c.abort(),4000);
+      const x=await fetch('https://photon.komoot.io/api/?limit=5&bbox=-170,-57,-30,72&q='+encodeURIComponent(r.c+', '+r.e+', '+UB.PAIS[r.cc]),{signal:c.signal});
+      clearTimeout(to);
+      const g=((await x.json()).features||[]).find(y=>(y.properties.countrycode||'').toUpperCase()===r.cc);
+      if(g){const ex=g.properties.extent,[lng,lat]=g.geometry.coordinates;cen=[lat,lng];caja=ex?[ex[0],ex[3],ex[2],ex[1]]:[lng-.05,lat-.05,lng+.05,lat+.05]}
+    }catch(_){}
+    const gj=await pol;
+    if(t!==seqZ)return;                                   // cambió la ubicación mientras se ubicaba
+    if(gj){caja=cajaDe(gj);cen=[(caja[1]+caja[3])/2,(caja[0]+caja[2])/2]}
+    if(!caja){say('No pudimos ubicar ese lugar ahora. Vuelve a elegirlo en un momento.');return}
+    zsel={cc:r.cc,c:r.c,caja,cen,gj};
+    mostrarMapa(zsel);
+  }
+  function limpiarZona(){zsel=null;seqZ++;listaZ=[];sugZ.hidden=true;zonaI.value='';ocultarMapa()}
+  // texto de la dirección: la calle más cercana al punto marcado (Nominatim); si no responde, un texto genérico con la ciudad
+  async function nombreDe(pt,z){
+    try{
+      const c=new AbortController(),to=setTimeout(()=>c.abort(),5000);
+      const r=await fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=18&accept-language=es&lat='+pt.lat+'&lon='+pt.lng,{signal:c.signal});
+      clearTimeout(to);
+      if(r.ok){
+        const a=(await r.json()).address||{},via=a.road||a.pedestrian||a.footway||a.path||'';
+        const txt=[(via+' '+(a.house_number||'')).trim(),a.neighbourhood||a.suburb||a.city_district||''].filter(Boolean).join(', ');
+        if(txt.length>=5)return txt.slice(0,120);
+      }
+    }catch(_){}
+    return ('Ubicación marcada en el mapa, '+z.c).slice(0,120);
+  }
+  zonaI.addEventListener('input',()=>{
+    zsel=null;seqZ++;ocultarMapa();                      // si cambia el texto de la ubicación hay que elegirla otra vez
+    buscarZ();
+  });
+  zonaI.addEventListener('keydown',e=>{
+    if(e.key==='Escape'&&!sugZ.hidden){e.preventDefault();sugZ.hidden=true}
+    else if(e.key==='Enter'){e.preventDefault();if(!zsel&&!sugZ.hidden&&listaZ.length)elegirZona(listaZ[0])}
+  });
+  zonaI.addEventListener('focus',()=>{if(!zsel&&listaZ.length&&zonaI.value.trim())sugZ.hidden=false});
+  sugZ.addEventListener('click',e=>{const b=e.target.closest('.opt');if(b&&listaZ[+b.dataset.i])elegirZona(listaZ[+b.dataset.i])});
+  document.addEventListener('click',e=>{
+    if(!e.target.closest('#pf-zsug,[name="zona"]'))sugZ.hidden=true;
+  });
   f.addEventListener('submit',async e=>{
     e.preventDefault();
     const v=n=>f.elements[n].value.trim();
     if(v('web'))return;                                   // campo trampa: solo lo llenan los robots
     const bad=(n,t)=>{say(t);f.elements[n].focus();return true};
-    const precio=+v('precio').replace(/\D/g,''),m2=+v('m2'),dir=v('dir'),zona=v('zona');
+    const precio=+v('precio').replace(/\D/g,''),m2=+v('m2'),zona=v('zona');
     const cod=f.elements.pais.value,lim=LONG[cod]||[7,11],loc0=v('tel').replace(/\D/g,'').replace(/^0+/,''),loc=(cod==='54'&&loc0.length===11&&loc0[0]==='9')?loc0.slice(1):loc0,tel=cod+loc;
     if(!(precio>0))return bad('precio','Escribe el precio.');
     if(!(m2>0))return bad('m2','Escribe la superficie en m².');
-    if(zona.length<3)return bad('zona','Escribe la zona (distrito y ciudad).');
-    if(dir.length<5)return bad('dir','Escribe la dirección.');
+    if(!zsel)return bad('zona','Elige la ubicación de la lista que aparece al escribir.');
+    if(!punto){say('Toca en el mapa el lugar de tu propiedad.');cajaMapa.scrollIntoView({block:'center'});return}
     if(cod==='54'?loc.length!==10:(loc.length<lim[0]||loc.length>lim[1]))return bad('tel',cod==='54'?'Argentina usa 10 dígitos, sin el 9.':'Ese país usa '+(lim[0]===lim[1]?lim[0]:lim[0]+' u '+lim[1])+' dígitos.');
     if(fotos.length<MAX){say('Agrega las 3 fotos.');const a=caja.querySelector('.pf-add');if(a)a.focus();return}
     if(!SB_URL||!SB_KEY){say('El envío aún no está conectado: falta pegar SB_URL y SB_KEY en el código (nota 9).');return}
@@ -1087,10 +1201,7 @@ $('#list').addEventListener('pointerout',e=>{const c=e.target.closest('.card');i
     try{ if(Date.now()-(+localStorage.getItem('hh_ult')||0)<60000){say('Espera un minuto antes de enviar otro anuncio.');return} }catch(_){}
     send.disabled=true;
     try{
-      say('Ubicando la dirección…');
-      let pos=null;
-      try{pos=await geo(dir+', '+zona)||await geo(zona)}catch(_){}
-      if(!pos){say('No pudimos ubicar esa dirección en el mapa. Revisa la zona.');send.disabled=false;return}
+      const z=zsel,pt=punto;say('Preparando el anuncio…');const dir=await nombreDe(pt,z);const pos={lat:pt.lat,lng:pt.lng,cc:z.cc}; // punto tocado en el mapa; dir = calle más cercana
       if(window.HH_PAISES&&!HH_PAISES[pos.cc]){say('Por ahora solo se puede publicar en: '+Object.values(HH_PAISES).sort((x,y)=>x.localeCompare(y,'es')).join(', ')+'. Revisa la zona o escribe el país.');send.disabled=false;return}
       say('Verificando…');
       const token=await esperarTS();
@@ -1107,10 +1218,11 @@ $('#list').addEventListener('pointerout',e=>{const c=e.target.closest('.card');i
       if(!r.ok){
         const j=await r.json().catch(()=>({}));
         if(j.error==='captcha'){say('No pudimos verificar que eres una persona. Inténtalo de nuevo.');send.disabled=false;return}
+        if(j.error==='pais'){say('Esa dirección no está en un país donde se puede publicar.');send.disabled=false;return}
         throw new Error('funcion '+r.status+' '+(j.error||''));
       }
       try{localStorage.setItem('hh_ult',String(Date.now()))}catch(_){}
-      f.reset();pintarTipos();fotos.forEach(x=>URL.revokeObjectURL(x.url));fotos=[];pintarFotos();
+      f.reset();limpiarZona();pintarTipos();fotos.forEach(x=>URL.revokeObjectURL(x.url));fotos=[];pintarFotos();
       say('¡Listo! Recibimos tu anuncio. Se mostrará cuando lo aprobemos.');
     }catch(err){console.error(err);say('No se pudo enviar. Revisa tu conexión e inténtalo de nuevo.')}
     send.disabled=false;
