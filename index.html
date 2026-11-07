@@ -113,6 +113,8 @@ NOTAS DEL ARCHIVO (todas las notas van aquí arriba)
    Mientras tanto, nada se muestra sin que lo apruebes tú (estado "aprobada").
 16. CONTORNO DE LA CAPITAL: al elegir una opción de Ubicación, además de ir allí, el mapa dibuja el borde de esa capital (línea color 2 y relleno muy suave). El límite se pide a Nominatim (OpenStreetMap, `polygon_geojson`) en la función `limite`; al llegar, el mapa se encuadra a ese borde y la lista se filtra por su área. Si Nominatim no responde en 6 segundos o solo devuelve un punto, no se dibuja nada y todo sigue como antes. Borrar el texto de Ubicación quita el borde.
    PINES Y GRUPOS DEL MAPA: fondo color 2 y texto color 1. Al elegir un pin (o pasar el mouse por un pin o un círculo de grupo) el fondo sigue en color 2 y el texto pasa a color 3.
+17. TARJETA VACÍA EN VER MAPA: en pantalla ancha, al abrir Ver mapa la tarjeta de la izquierda siempre ocupa su espacio (el mapa empieza a su derecha). Si no hay propiedades (por la zona o los filtros) queda vacía: fondo color 1 y solo el aviso "No hay propiedades con estos filtros." centrado. En celular, donde la tarjeta taparía el mapa, no se muestra cuando está vacía.
+18. ESTADOS UNIDOS COMO "US": tanto en la lista de sugerencias como en la casilla al elegir, Estados Unidos aparece como "US, Estado, Capital" (el texto sale de `label` en `FILAS`). Se encuentra escribiendo US, United States o Estados Unidos; para el orden alfabético se sigue usando "United States" (`ord`), así que escribir "U" muestra primero sus opciones.
 -->
 <html lang="es">
 <head>
@@ -304,10 +306,12 @@ html.mg-on,html.mg-on body{overflow:hidden} /* Ver mapa: sin barra de desplazami
 }
 .mcard{position:absolute;left:0;top:0;bottom:0;z-index:900;width:min(380px,100%);height:100%;display:flex;flex-direction:column} /* pegada a los bordes del contenedor: ocupa todo su espacio */
 .mcard[hidden]{display:none}
+@media(max-width:700px){.mcard.vacia{display:none}} /* en celular la tarjeta tapa el mapa: si está vacía no se muestra */
 /* pantalla ancha: la tarjeta tiene su propio espacio a la izquierda y el mapa empieza a su derecha (nada queda tapado por la tarjeta) */
 @media(min-width:701px){.canvas:has(#mcard:not([hidden])) #mapa{left:min(380px,100%)}.mcard{border-right:1px solid var(--linea)}}
 /* tarjeta única: mitad imagen, mitad información (más pequeña para que quepa todo); el corazón arriba a la derecha de la información */
 .mcard .card{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;background:var(--negro)}
+.mcard .card.sin{align-items:center;justify-content:center;padding:24px;text-align:center;color:var(--suave);font:500 16px/1.4 var(--body)} /* tarjeta vacía: solo el aviso, centrado */
 .mcard .card,.mcard .card:hover,.mcard .card.top{border:0;border-radius:0;box-shadow:none} /* sin borde verde: la tarjeta llena el fondo (el redondeo lo da el contenedor del mapa) */
 .mcard .pic{flex:1 1 0;min-height:0;border-right:0;border-bottom:1px solid var(--linea)}
 .mcard .body{position:relative;flex:1 1 0;min-height:0;gap:3px;padding:12px 16px 14px;font-size:clamp(11px,1.7vh,14px);overflow:hidden}
@@ -631,7 +635,8 @@ function mostrarSel(animar){
   const box=$('#sel'),p=visibles.find(x=>x.id===selId);
   box.hidden=!p;
   const mc=$('#mcard'),grande=$('.layout').classList.contains('mg');
-  mc.hidden=!(grande&&p);mc.innerHTML=grande&&p?cardHTML(p,true,true):'';
+  mc.hidden=!grande;mc.classList.toggle('vacia',grande&&!p); // en Ver mapa la tarjeta siempre ocupa su lugar; si no hay propiedades queda vacía
+  mc.innerHTML=grande?(p?cardHTML(p,true,true):'<div class="card sin">No hay propiedades con estos filtros.</div>'):'';
   box.innerHTML=p?cardHTML(p,true):'';
   if(p&&animar)box.firstElementChild.classList.add('cambia');
   // el contenedor conserva el alto mayor visto, así la lista de abajo no se mueve al cambiar de propiedad
@@ -836,11 +841,13 @@ iniciarMapa();render();cargarPublicadas();
   const normq=t=>norm(t).replace(/\s*,\s*/g,', ').replace(/\s+/g,' ').replace(/^\s+|\s+$/g,'');
   const FILAS=[];
   for(const cc in DATOS)for(const [e,c] of DATOS[cc]){
-    const label=PAIS[cc]+', '+e+', '+c;
-    FILAS.push({cc,e,c,label,k:ALIAS[cc]?[norm(label),norm(ALIAS[cc]+', '+e+', '+c)]:[norm(label)]});
+    const ord=PAIS[cc]+', '+e+', '+c;                       // para ordenar alfabéticamente (United States sigue en la U)
+    const label=(cc==='US'?'US':PAIS[cc])+', '+e+', '+c;    // lo que se ve en la lista y en la casilla: Estados Unidos aparece como US
+    const k=[norm(label),norm(ord)];if(ALIAS[cc])k.push(norm(ALIAS[cc]+', '+e+', '+c)); // también se encuentra escribiendo United States o Estados Unidos
+    FILAS.push({cc,e,c,label,ord,k});
   }
   window.HH_PAISES=Object.fromEntries(Object.keys(DATOS).map(c=>[c,ALIAS[c]||PAIS[c]])); // países donde se puede publicar (el formulario Publicar los usa)
-  const alfa=(x,y)=>x.label.localeCompare(y.label,'es',{sensitivity:'base'});
+  const alfa=(x,y)=>x.ord.localeCompare(y.ord,'es',{sensitivity:'base'});
   // negrita en lo que ya escribió la persona (siempre es el inicio del texto)
   function resaltar(texto,q){
     const fr=document.createDocumentFragment(),qn=normq(q);
@@ -880,7 +887,8 @@ iniciarMapa();render();cargarPublicadas();
   }
   async function ir(f){
     const t=++irSeq,[S,W,N,E]=CAJA[f.cc];
-    inp.value=f.label;sug.hidden=true;
+    inp.value=f.label;
+    sug.hidden=true;
     borrarLimite();const pol=limite(f);
     let b=L.latLngBounds([[S,W],[N,E]]),max=6;
     try{
