@@ -47,7 +47,7 @@ NOTAS DEL ARCHIVO (todas las notas van aquí arriba)
    (borrar el texto quita la zona). Todos los detalles están en la nota 14.
    "Ver mapa" (abajo del mapa) abre el mapa a todo el ancho con los precios donde está cada propiedad; "Ver listado" vuelve.
    Más filtros: "Sin filtros" va arriba y está marcado por defecto.
-   Tarjeta única del mapa (al abrir Ver mapa): mitad imagen y mitad información, sin barra de desplazamiento y sin el texto "Seleccionado en el mapa"; el corazón va arriba a la derecha de la información y los botones + y − van abajo a la derecha, encima del texto de OpenStreetMap, con fondo negro y los signos en color 2 (verde). Siempre se ven igual: no cambian al pasar el mouse, pulsarlos ni al llegar al límite del zoom.
+   Tarjeta única del mapa (al abrir Ver mapa): mitad imagen y mitad información, sin barra de desplazamiento y sin el texto "Seleccionado en el mapa"; el corazón va arriba a la derecha de la información y, en pantalla ancha, la tarjeta ocupa su propio espacio a la izquierda y el mapa empieza a su derecha (no queda debajo de ella); los botones + y − van abajo a la derecha, encima del texto de OpenStreetMap, con fondo negro y los signos en color 2 (verde); miden 44 px y su centro queda alineado con el de la flecha → de la barra "Ver mapa / Ver listado". El texto "Leaflet | © OpenStreetMap" también va en color 2. Siempre se ven igual: no cambian al pasar el mouse, pulsarlos ni al llegar al límite del zoom.
    Necesita internet para cargar el mapa.
    Cada propiedad lleva sus coordenadas `lat` y `lng`; de ahí salen los pines con precio.
    El mapa de OpenStreetMap es gratis para uso liviano (reglas: operations.osmfoundation.org/policies/tiles); si la web tiene mucho tráfico conviene cambiar de proveedor.
@@ -111,6 +111,8 @@ NOTAS DEL ARCHIVO (todas las notas van aquí arriba)
    (se arma solo con las claves de `DATOS`). Si no coincide, avisa con la lista de países permitidos y no envía nada.
    Esta revisión está solo en la página: para que un robot tampoco pueda saltársela, la función "publicar" de Supabase (funcion-publicar.ts) debería revisar el país de lat/lng igual.
    Mientras tanto, nada se muestra sin que lo apruebes tú (estado "aprobada").
+16. CONTORNO DE LA CAPITAL: al elegir una opción de Ubicación, además de ir allí, el mapa dibuja el borde de esa capital (línea color 2 y relleno muy suave). El límite se pide a Nominatim (OpenStreetMap, `polygon_geojson`) en la función `limite`; al llegar, el mapa se encuadra a ese borde y la lista se filtra por su área. Si Nominatim no responde en 6 segundos o solo devuelve un punto, no se dibuja nada y todo sigue como antes. Borrar el texto de Ubicación quita el borde.
+   LO ELEGIDO EN EL MAPA (pin elegido, con el mouse encima, o círculo de grupo con el mouse): color 2 con menos luminosidad (`--verde-oscuro`, se cambia en :root); el texto siempre es color 3.
 -->
 <html lang="es">
 <head>
@@ -127,7 +129,7 @@ NOTAS DEL ARCHIVO (todas las notas van aquí arriba)
 :root{
   --sep:20px; /* separación única entre sqcircles (filtros, tarjetas, mapa, Ordenar) */
   --negro:#1a1a1a; --verde:#14eb4a; --blanco:#e8fded;
-  --linea:rgba(232,253,237,.2); --suave:rgba(232,253,237,.66); --verde-t:rgba(20,235,74,.14);
+  --verde-oscuro:color-mix(in srgb,var(--verde) 55%,var(--negro)); /* el verde (color 2) con menos luminosidad: para lo elegido en el mapa */ --linea:rgba(232,253,237,.2); --suave:rgba(232,253,237,.66); --verde-t:rgba(20,235,74,.14);
   --display:'Bricolage Grotesque',system-ui,sans-serif; --body:'Instrument Sans',system-ui,sans-serif;
   box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
 }
@@ -300,10 +302,13 @@ html.mg-on,html.mg-on body{overflow:hidden} /* Ver mapa: sin barra de desplazami
   .layout.mg{padding-bottom:var(--sep)}
   .layout.mg .map{height:calc(100vh - 5 * var(--sep) - 61.864px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));height:calc(100dvh - 5 * var(--sep) - 61.864px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))}
 }
-.mcard{position:absolute;left:16px;bottom:16px;z-index:900;width:min(380px,calc(100% - 32px));height:calc(100% - 32px);display:flex;flex-direction:column}
+.mcard{position:absolute;left:0;top:0;bottom:0;z-index:900;width:min(380px,100%);height:100%;display:flex;flex-direction:column} /* pegada a los bordes del contenedor: ocupa todo su espacio */
 .mcard[hidden]{display:none}
+/* pantalla ancha: la tarjeta tiene su propio espacio a la izquierda y el mapa empieza a su derecha (nada queda tapado por la tarjeta) */
+@media(min-width:701px){.canvas:has(#mcard:not([hidden])) #mapa{left:min(380px,100%)}.mcard{border-right:1px solid var(--linea)}}
 /* tarjeta única: mitad imagen, mitad información (más pequeña para que quepa todo); el corazón arriba a la derecha de la información */
 .mcard .card{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;background:var(--negro)}
+.mcard .card,.mcard .card:hover,.mcard .card.top{border:0;border-radius:0;box-shadow:none} /* sin borde verde: la tarjeta llena el fondo (el redondeo lo da el contenedor del mapa) */
 .mcard .pic{flex:1 1 0;min-height:0;border-right:0;border-bottom:1px solid var(--blanco)}
 .mcard .body{position:relative;flex:1 1 0;min-height:0;gap:3px;padding:12px 16px 14px;font-size:clamp(11px,1.7vh,14px);overflow:hidden}
 .mcard .heart{top:8px;right:10px;width:30px;height:30px}
@@ -317,21 +322,23 @@ html.mg-on,html.mg-on body{overflow:hidden} /* Ver mapa: sin barra de desplazami
 .mcard .wa{height:clamp(34px,5.4vh,44px);font-size:inherit}
 .mcard .wa svg{width:18px;height:18px}
 /* + / − abajo a la derecha, justo encima del texto "Leaflet | © OpenStreetMap"; fondo negro y signos en color 2 (verde) */
-.leaflet-bottom.leaflet-right .leaflet-control-zoom{margin:0 0 6px 0}
+.leaflet-bottom.leaflet-right .leaflet-control-zoom{margin:0 10px 6px 0}  /* 10px + mitad del botón (22px) = 32px: el mismo centro que la flecha → de la barra de abajo */
+.leaflet-control-zoom-in,.leaflet-control-zoom-out{font:700 28px/42px var(--body)!important;text-indent:0!important}
 /* círculo que agrupa varias propiedades cercanas */
 .grupo{position:absolute;left:0;top:0;translate:-50% -50%;min-width:36px;height:36px;padding:0 9px;box-sizing:border-box;border-radius:999px;display:flex;align-items:center;justify-content:center;
-  background:#0b5f45;color:#fff;font:700 14px var(--body);cursor:pointer;box-shadow:0 0 0 5px rgba(11,95,69,.28),0 2px 6px rgba(0,0,0,.28)}
+  background:var(--verde);color:var(--blanco);font:700 14px var(--body);cursor:pointer;box-shadow:0 0 0 5px rgba(20,235,74,.28),0 2px 6px rgba(0,0,0,.28);transition:background .2s}
+.grupo:hover{background:var(--verde-oscuro)}
 .pinwrap{background:none;border:0}
 /* etiqueta verde oscuro con el punto exacto debajo (el punto marca la ubicación real) */
-.pin{--pc:#0b5f45;position:absolute;left:0;top:0;translate:-50% calc(-100% - 16px);transform-origin:50% calc(100% + 16px);padding:6px 12px;border-radius:8px;background:var(--pc);color:#fff;font:700 14px var(--body);white-space:nowrap;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.28);transition:background .2s,color .2s,scale .2s}
-.pin::after{content:"";position:absolute;left:50%;top:calc(100% + 8px);translate:-50% 0;width:16px;height:16px;box-sizing:border-box;border:3px solid #fff;border-radius:50%;background:var(--pc);box-shadow:0 1px 4px rgba(0,0,0,.35);transition:background .2s}
-.pin.on,.pin:hover,.pin.sel{--pc:var(--verde);color:var(--negro)}
+.pin{--pc:var(--verde);position:absolute;left:0;top:0;translate:-50% calc(-100% - 16px);transform-origin:50% calc(100% + 16px);padding:6px 12px;border-radius:8px;background:var(--pc);color:var(--blanco);font:700 14px var(--body);white-space:nowrap;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.28);transition:background .2s,color .2s,scale .2s}
+.pin::after{content:"";position:absolute;left:50%;top:calc(100% + 8px);translate:-50% 0;width:16px;height:16px;box-sizing:border-box;border:3px solid var(--blanco);border-radius:50%;background:var(--pc);box-shadow:0 1px 4px rgba(0,0,0,.35);transition:background .2s}
+.pin.on,.pin:hover,.pin.sel{--pc:var(--verde-oscuro);color:var(--blanco)}
 .pin.on,.pin:hover{scale:1.1}
 .leaflet-bar,.leaflet-bar a{border-color:var(--linea)!important}
-.leaflet-bar a,.leaflet-bar a:hover,.leaflet-bar a:focus,.leaflet-bar a:active,.leaflet-bar a.leaflet-disabled{background:var(--negro)!important;color:var(--verde)!important;opacity:1!important;box-shadow:none!important;outline:0!important;filter:none!important;-webkit-tap-highlight-color:transparent}
+.leaflet-bar a,.leaflet-bar a:hover,.leaflet-bar a:focus,.leaflet-bar a:active,.leaflet-bar a.leaflet-disabled{background:var(--negro)!important;color:var(--verde)!important;opacity:1!important;box-shadow:none!important;outline:0!important;filter:none!important;-webkit-tap-highlight-color:transparent;width:44px!important;height:44px!important;line-height:42px!important}
 /* los + y − hacen su función pero NO cambian de aspecto al pasar el mouse, pulsarlos o llegar al límite del zoom */
 .leaflet-control-attribution{background:rgba(26,26,26,.85)!important;color:var(--verde)!important}
-.leaflet-control-attribution a{color:var(--verde)!important}
+.leaflet-control-attribution,.leaflet-control-attribution a,.leaflet-control-attribution span{color:var(--verde)!important}
 .vm{display:flex;justify-content:space-between;align-items:center;padding:18px 22px;border-top:1px solid var(--linea);font-weight:700;transition:color .2s}
 .vm:hover{color:var(--verde)}
 .vm svg{width:20px;height:20px}
@@ -388,7 +395,7 @@ textarea.pf-i{height:92px;padding:10px 14px;resize:vertical;font-family:var(--bo
   #dd-precio .panel{left:0;right:auto}
 }
 @media(max-width:640px){
-  .card{grid-template-columns:1fr}
+  .card{grid-template-columns:1fr;grid-template-rows:minmax(230px,1fr) auto} /* la foto absorbe todo el espacio libre; los datos quedan compactos, sin hueco antes del botón */
   .pic{min-height:230px}
   .price{font-size:30px}
 }
@@ -578,6 +585,7 @@ function iniciarMapa(){
   // límite: no se puede alejar más de lo que cabe un solo mundo (sin bordes vacíos ni mundos repetidos)
   const ajustar=()=>{const t=mapa.getSize();if(!t.x||!t.y)return;const z=mapa.getBoundsZoom(L.latLngBounds([[-85,-180],[85,180]]),true);if(isFinite(z))mapa.setMinZoom(Math.max(1,z))};
   mapa.on('resize',ajustar);
+  if(window.ResizeObserver)new ResizeObserver(()=>mapa.invalidateSize()).observe(mapa.getContainer()); // si cambia el tamaño del mapa (ej.: aparece la tarjeta) se reacomoda solo
   setTimeout(()=>{mapa.invalidateSize();ajustar()},0);
   addEventListener('resize',()=>{mapa.invalidateSize();$('#sel').style.minHeight=''});
 }
@@ -859,9 +867,22 @@ iniciarMapa();render();cargarPublicadas();
     pintar();
   }
   // al elegir: el mapa va a esa capital (se ubica con el mapa real); si no responde, queda el país
+  // contorno de la capital elegida: se pide el límite (polígono) a Nominatim y se dibuja con el borde en color 2
+  let capaLimite=null;
+  function borrarLimite(){if(capaLimite&&mapa)mapa.removeLayer(capaLimite);capaLimite=null}
+  async function limite(f){
+    try{
+      const lim=new Promise((_,no)=>setTimeout(()=>no(new Error('tiempo')),6000));
+      const r=await Promise.race([fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&polygon_geojson=1&polygon_threshold=0.0005&accept-language=es&countrycodes='+f.cc.toLowerCase()+'&q='+encodeURIComponent(f.c+', '+f.e+', '+PAIS[f.cc])),lim]);
+      if(!r.ok)return null;
+      const g=(await r.json()).find(x=>x.geojson&&/Polygon/.test(x.geojson.type));
+      return g?g.geojson:null;
+    }catch(e){return null}
+  }
   async function ir(f){
     const t=++irSeq,[S,W,N,E]=CAJA[f.cc];
     inp.value=f.label;sug.hidden=true;
+    borrarLimite();const pol=limite(f);
     let b=L.latLngBounds([[S,W],[N,E]]),max=6;
     try{
       const lim=new Promise((_,no)=>setTimeout(()=>no(new Error('tiempo')),4000));
@@ -877,6 +898,13 @@ iniciarMapa();render();cargarPublicadas();
     estado.zona=b;estado.zonaNombre=f.c;
     if(mapa)mapa.fitBounds(b,{padding:[30,30],maxZoom:max});
     render();
+    // cuando llega el límite de la capital: se dibuja su borde y el mapa lo encuadra completo (si no llega, queda como antes)
+    const gj=await pol;
+    if(t!==irSeq||!gj||!mapa)return;
+    borrarLimite();
+    capaLimite=L.geoJSON(gj,{interactive:false,style:{color:'#14eb4a',weight:3,opacity:1,lineJoin:'round',fillColor:'#14eb4a',fillOpacity:.1}}).addTo(mapa);
+    const pb=capaLimite.getBounds();
+    if(pb.isValid()){estado.zona=pb;mapa.fitBounds(pb,{padding:[30,30],maxZoom:16});render()}
   }
   function mover(d){
     const o=[...sug.querySelectorAll('.opt')];
@@ -895,7 +923,7 @@ iniciarMapa();render();cargarPublicadas();
   });
   inp.addEventListener('input',()=>{
     if(inp.value.trim()){buscar();return}   // sugiere mientras se escribe, al instante
-    lista=[];sug.hidden=true;irSeq++;
+    lista=[];sug.hidden=true;irSeq++;borrarLimite();
     if(estado.zona){estado.zona=null;estado.zonaNombre='';if(mapa)mapa.fitBounds(LATAM);render()} // al borrar el texto se quita la zona
   });
   inp.addEventListener('focus',()=>{if(lista.length&&inp.value.trim()){sug.hidden=false}});
