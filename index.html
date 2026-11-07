@@ -41,17 +41,18 @@ NOTAS DEL ARCHIVO (todas las notas van aquí arriba)
    - Se quitaron: el botón "Crear alerta", la franja verde de la foto (ej. "Entrega inmediata")
      y la etiqueta "Destacado".
 
-4. MAPA REAL: usa Leaflet (cdnjs) con mapa oscuro de CARTO sobre datos de OpenStreetMap.
+4. MAPA REAL: usa Leaflet (cdnjs) con el mapa estándar de OpenStreetMap (el de colores normales, con calles y nombres; sin clave de API). Es un mapa de todo el mundo.
    Vista inicial: Latinoamérica (LATAM). Los precios del mapa se agrupan en círculos con el número de propiedades (clic = acercar).
-   Ubicaciones: se escribe cualquier lugar y se pulsa Enter; busca con OpenStreetMap (Nominatim, sin clave). Al elegir un resultado,
-   el mapa va allí y la lista muestra solo lo que hay en esa zona (borrar el texto quita la zona).
+   Ubicaciones: lista fija País, Estado, Capital con sugerencias al escribir; al elegir una, el mapa va allí y la lista muestra solo lo que hay en esa zona
+   (borrar el texto quita la zona). Todos los detalles están en la nota 14.
    "Ver mapa" (abajo del mapa) abre el mapa a todo el ancho con los precios donde está cada propiedad; "Ver listado" vuelve.
    Más filtros: "Sin filtros" va arriba y está marcado por defecto.
    Tarjeta única del mapa (al abrir Ver mapa): mitad imagen y mitad información, sin barra de desplazamiento y sin el texto "Seleccionado en el mapa"; el corazón va arriba a la derecha de la información y los botones + y − quedan arriba, a su derecha.
    Necesita internet para cargar el mapa.
    Cada propiedad lleva sus coordenadas `lat` y `lng`; de ahí salen los pines con precio.
-   Los mapas de CARTO/OSM son gratis para uso liviano; si la web tiene mucho tráfico conviene
-   revisar sus condiciones de uso o cambiar de proveedor.
+   El mapa de OpenStreetMap es gratis para uso liviano (reglas: operations.osmfoundation.org/policies/tiles); si la web tiene mucho tráfico conviene cambiar de proveedor.
+   El estilo claro de CARTO (Voyager) que se probó pide clave de API y salía con marca de agua "API KEY REQUIRED"; por eso no se usa.
+   Se puede mirar todo el mundo en el mapa, pero PUBLICAR solo se permite en los 22 países de la nota 14 (ver nota 15).
 
 5. PROPIEDADES: están en la lista `props` del JavaScript final. Los datos son de ejemplo; reemplázalos por los reales.
    Cada una usa su imagen (depto1.webp, casa1.webp, terreno1.webp, etc.). Sin imagen se ve un recuadro de aviso.
@@ -83,6 +84,33 @@ NOTAS DEL ARCHIVO (todas las notas van aquí arriba)
    si están las sugerencias de Ubicación, si la ventana Publicar está abierta o si se está escribiendo en una casilla. El código está al final del JavaScript.
 12. SUPABASE: supabase-completo.sql crea y deja todo listo (tabla, reglas de seguridad y bucket "fotos" de 500 KB por archivo, solo JPG) y se puede correr varias veces.
 13. ANTIBOT: el formulario envía todo a la función "publicar" (funcion-publicar.ts), que verifica Turnstile (Cloudflare) y guarda las fotos y el anuncio. Pasos: pegar la Site Key en TS_SITEKEY, crear la función en Supabase con el secreto TURNSTILE_SECRET_KEY y, cuando ya funcione, correr supabase-cerrar-escritura.sql para que nadie pueda escribir directo. La página ya reduce cada foto a menos de 500 KB antes de subirla.
+14. UBICACIONES (casilla de búsqueda "País, Estado, Ciudad"):
+   - El texto gris "País, Estado, Ciudad" es solo de ejemplo: desaparece al escribir la primera letra.
+   - La lista es FIJA y está en el JavaScript (constante `DATOS`, en el bloque "Ubicaciones"). Las sugerencias no usan internet: salen al instante.
+   - Cada opción es siempre "País, Estado, Capital del estado" (ej.: Perú, Junín, Huancayo). Nunca sale solo el país ni "País, Estado".
+   - Lo que se escribe se compara con el INICIO de esa frase (sin importar tildes ni mayúsculas). Si escribes un país, solo salen opciones de ese país.
+     Escribir "Huancayo" solo no encuentra nada: hay que empezar por el país (Perú, Junín, Huancayo). También sirve "perú,junín".
+   - Orden alfabético por país, luego estado, luego capital. Máximo 5 opciones (constante `MAX`). Sin barra de desplazamiento; la lista mide lo mismo que la casilla.
+   - PAÍSES INCLUIDOS (22): United States, Canada, México, Belice, Guatemala, Honduras, El Salvador, Nicaragua, Costa Rica, Panamá, Puerto Rico,
+     República Dominicana, Argentina, Bolivia, Brasil, Chile, Colombia, Ecuador, Paraguay, Perú, Uruguay y Venezuela.
+   - NO ESTÁN, a propósito: Guyana, Surinam, Guayana Francesa y las islas del Caribe, salvo Puerto Rico y República Dominicana
+     (Cuba, Haití, Jamaica, Bahamas, Barbados, Trinidad y Tobago, Antigua y Barbuda, Dominica, Granada, San Cristóbal y Nieves, Santa Lucía, San Vicente,
+     Curazao, Aruba, Guadalupe y Martinica). Belice sí está porque es de Centroamérica (continente).
+   - IDIOMA: todo en español, salvo los países donde el inglés es lengua nativa (United States, Canada y Belize), que se muestran en inglés con sus estados
+     en inglés. Esos tres también se encuentran escribiendo en español (Estados Unidos, Canadá, Belice) gracias a `ALIAS`.
+   - PERÚ lleva TODAS las capitales de provincia de sus 25 departamentos (196; ej.: Junín = Huancayo, Concepción, La Merced, Jauja, Junín, Satipo, Tarma, La Oroya, Chupaca).
+     Los demás países llevan solo la capital de cada estado (una por estado). Pendiente: darles también las capitales de provincia/condado.
+   - La lista fue escrita de memoria (618 combinaciones): si algo sale mal escrito o falta, se corrige en `DATOS`.
+     Para agregar un país hay que tocar 3 cosas: `DATOS` (estados y capitales), `PAIS` (nombre que se muestra) y `CAJA` (zona del país [sur, oeste, norte, este]);
+     y `ALIAS` solo si es de habla inglesa. Para quitar un país, se borra de esas mismas constantes.
+   - AL ELEGIR una opción: el mapa va a esa capital y la lista de propiedades se filtra a esa zona. La ubicación exacta se pide a Photon (OpenStreetMap, sin clave);
+     si no responde en 4 segundos, el mapa queda en el país. Borrar el texto quita la zona.
+   - El formulario Publicar no usa los estados ni las capitales, pero sí la lista de países (nota 15).
+15. PUBLICAR SOLO EN LOS PAÍSES ELEGIDOS: el mapa es de todo el mundo, pero el formulario Publicar solo deja enviar si la dirección queda en uno de los 22 países de la nota 14
+   (como en Urbania, que solo deja publicar en Perú). Al enviar, la dirección se ubica con Nominatim (`addressdetails=1`) y se revisa su país contra `HH_PAISES`
+   (se arma solo con las claves de `DATOS`). Si no coincide, avisa con la lista de países permitidos y no envía nada.
+   Esta revisión está solo en la página: para que un robot tampoco pueda saltársela, la función "publicar" de Supabase (funcion-publicar.ts) debería revisar el país de lat/lng igual.
+   Mientras tanto, nada se muestra sin que lo apruebes tú (estado "aprobada").
 -->
 <html lang="es">
 <head>
@@ -128,7 +156,7 @@ button{font:inherit;color:inherit}
 /* al seleccionar solo cambia el color del borde, sin segundo contorno */
 .sq,.sq:focus,.sq:focus-visible{outline:none}
 .sq:hover,.sq:focus-visible,input.sq:focus,.dd.open .sq,.dd.open .ob{border-color:var(--verde)}
-.sq::placeholder{color:var(--blanco);opacity:1}
+.sq::placeholder{color:var(--suave);opacity:1}
 .sq .lbl{display:block;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .f>svg{position:absolute;right:18px;top:50%;translate:0 -50%;width:20px;height:20px;pointer-events:none}
 .chev{transition:rotate .2s}
@@ -237,13 +265,12 @@ button{font:inherit;color:inherit}
 .map{position:relative;isolation:isolate;display:flex;flex-direction:column;height:calc(100vh - 190px);min-height:360px;overflow:hidden;
   border:1px solid var(--linea);border-radius:28px;corner-shape:squircle}
 .canvas{position:relative;flex:1;min-height:0;background:var(--negro)}
-#mapa{position:absolute;inset:0;background:var(--negro);font-family:var(--body)}
+#mapa{position:absolute;inset:0;background:#e9e7e1;font-family:var(--body)}
 #ubi+svg{pointer-events:auto;cursor:pointer}
-.sug{position:absolute;top:calc(100% + 8px);left:0;z-index:60;width:max(100%,340px);max-width:min(460px,calc(100vw - 48px));padding:8px;display:grid;gap:2px;background:var(--negro);
+.sug{position:absolute;top:calc(100% + 8px);left:0;z-index:60;width:100%;box-sizing:border-box;padding:8px;display:grid;gap:2px;background:var(--negro);
   border:1px solid var(--linea);border-radius:22px;corner-shape:squircle;box-shadow:0 24px 60px -20px rgba(0,0,0,.9)}
 .sug[hidden]{display:none}
 .sug .opt{white-space:normal;text-align:left;line-height:1.3}
-.sug{max-height:min(380px,60vh);overflow-y:auto}
 .sug .cab{margin:0;padding:10px 14px 6px;color:var(--suave);font:600 13px var(--body)}
 .sug .opt{display:block;font-weight:400}
 .sug .opt strong{font-weight:800}
@@ -384,7 +411,7 @@ textarea.pf-i{height:92px;padding:10px 14px;resize:vertical;font-family:var(--bo
 <main class="wrap">
   <div class="filters" role="search">
     <div class="f">
-      <input class="sq" id="ubi" type="text" placeholder="Ubicación" autocomplete="off" aria-label="Ubicación">
+      <input class="sq" id="ubi" type="text" placeholder="País, Estado, Ciudad" autocomplete="off" aria-label="País, Estado, Ciudad">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
       <div class="sug" id="sug" hidden></div>
     </div>
@@ -543,13 +570,13 @@ async function cargarPublicadas(){
 const estado={op:'alquiler',tipo:'Departamento',mon:'PEN',desde:0,hasta:0,zona:null,zonaNombre:'',mf:{sup:0,dorm:0,ban:0,est:0},orden:-1}; // orden: -1 = mayor precio (por defecto), 1 = menor precio
 let fav=new Set(), mapa=null, capa=null, marcas={}, visibles=[], selId=null;
 
-/* mapa real: Leaflet + mapa oscuro de CARTO (datos de OpenStreetMap), centrado en Lima */
+/* mapa real: Leaflet + mapa estándar de OpenStreetMap (colores normales, calles y nombres), todo el mundo */
 function iniciarMapa(){
   if(!window.L)return;
   mapa=L.map('mapa',{zoomSnap:.25,minZoom:2,dragging:!L.Browser.mobile});
   mapa.fitBounds(LATAM,{animate:false});
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{subdomains:'abcd',maxZoom:19,
-    attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>'}).addTo(mapa);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,
+    attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'}).addTo(mapa);
   capa=L.layerGroup().addTo(mapa);
   mapa.on('zoomend',()=>pintar(visibles));
   setTimeout(()=>mapa.invalidateSize(),0);
@@ -783,81 +810,74 @@ Object.keys(DD).forEach(k=>{
 document.addEventListener('click',e=>{if(!e.target.closest('.dd'))cerrar()});
 
 iniciarMapa();render();cargarPublicadas();
-/* Ubicaciones: sugerencias reales del mapa mientras se escribe (Photon, datos de OpenStreetMap, sin clave) */
+/* Ubicaciones: lista fija País > Estado/Departamento > Capital, en español (los países de habla inglesa, en inglés).
+   Lo escrito se compara con el INICIO de "País, Estado, Capital"; los resultados salen en orden alfabético, máximo 5. */
 (function(){
   const inp=$('#ubi'),sug=$('#sug');
-  let lista=[],act=-1,tm=0,ctl=null,seq=0;
+  let lista=[],act=-1,qAct='',irSeq=0;
+  const MAX=5;
   const msg=t=>{const p=document.createElement('p');p.className='msg';p.textContent=t;sug.replaceChildren(p)};
-  let qAct='';
   // nombre del país: en español, salvo los países donde el inglés es lengua nativa (se muestran en inglés)
-  const PAIS={AR:'Argentina',BO:'Bolivia',BR:'Brasil',CL:'Chile',CO:'Colombia',CR:'Costa Rica',CU:'Cuba',DO:'República Dominicana',EC:'Ecuador',SV:'El Salvador',GT:'Guatemala',HN:'Honduras',MX:'México',NI:'Nicaragua',PA:'Panamá',PY:'Paraguay',PE:'Perú',PR:'Puerto Rico',UY:'Uruguay',VE:'Venezuela',HT:'Haití',SR:'Surinam',GF:'Guayana Francesa',CW:'Curazao',AW:'Aruba',GP:'Guadalupe',MQ:'Martinica',
-    US:'United States',CA:'Canada',JM:'Jamaica',BS:'Bahamas',BB:'Barbados',BZ:'Belize',GY:'Guyana',TT:'Trinidad and Tobago',AG:'Antigua and Barbuda',DM:'Dominica',GD:'Grenada',KN:'Saint Kitts and Nevis',LC:'Saint Lucia',VC:'Saint Vincent and the Grenadines'};
-  const TIPOS=new Set(['country','state','county','city','district','locality']); // solo lugares, sin calles ni números
-  // texto: País, Departamento/Estado, Distrito (en ese orden)
-  const info=f=>{
-    const p=f.properties,pais=PAIS[(p.countrycode||'').toUpperCase()]||p.country||'';
-    let partes;
-    if(p.type==='country')partes=[pais];
-    else if(p.type==='state')partes=[pais,p.name];
-    else partes=[pais,p.state,p.name];
-    partes=partes.filter(Boolean);
-    return{tit:p.name||pais,label:partes.join(', ')};
-  };
-  // quita tildes sin cambiar el largo del texto (Perú = Peru al comparar)
-  const sinTilde=t=>t.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-  // pone en negrita lo que escribió la persona al inicio de cada palabra (sin usar innerHTML)
+  const PAIS={AR:'Argentina',BO:'Bolivia',BR:'Brasil',CL:'Chile',CO:'Colombia',CR:'Costa Rica',DO:'República Dominicana',EC:'Ecuador',SV:'El Salvador',GT:'Guatemala',HN:'Honduras',MX:'México',NI:'Nicaragua',PA:'Panamá',PY:'Paraguay',PE:'Perú',PR:'Puerto Rico',UY:'Uruguay',VE:'Venezuela',
+    US:'United States',CA:'Canada',BZ:'Belize'};
+  // zona de cada país para el mapa: [sur, oeste, norte, este]
+  const CAJA={AR:[-55.1,-73.6,-21.8,-53.6],BO:[-22.9,-69.7,-9.7,-57.5],BR:[-33.8,-74,5.3,-34.8],CL:[-56,-75.7,-17.5,-66.4],CO:[-4.2,-79,13.4,-66.8],CR:[8,-85.95,11.2,-82.5],DO:[17.5,-72,19.95,-68.3],EC:[-5,-81.1,1.5,-75.2],SV:[13.15,-90.1,14.45,-87.7],GT:[13.7,-92.25,17.8,-88.2],HN:[12.98,-89.35,16.5,-83.1],MX:[14.5,-118.4,32.7,-86.7],NI:[10.7,-87.7,15,-82.6],PA:[7.2,-83.05,9.65,-77.15],PY:[-27.6,-62.65,-19.3,-54.3],PE:[-18.35,-81.33,-0.04,-68.65],PR:[17.9,-67.3,18.5,-65.2],UY:[-35,-58.45,-30.1,-53.1],VE:[0.65,-73.4,12.2,-59.8],
+    US:[24.5,-125,49.4,-66.9],CA:[42,-141,72,-52],BZ:[15.9,-89.25,18.5,-87.75]};
+  // los países de habla inglesa se muestran en inglés, pero también se encuentran escribiéndolos en español
+  const ALIAS={US:'Estados Unidos',CA:'Canadá',BZ:'Belice'};
+  // País > [estado, capital]
+  const DATOS={"PE":[["Amazonas","Chachapoyas"],["Amazonas","Bagua"],["Amazonas","Jumbilla"],["Amazonas","Santa María de Nieva"],["Amazonas","Lámud"],["Amazonas","San Nicolás"],["Amazonas","Bagua Grande"],["Áncash","Huaraz"],["Áncash","Aija"],["Áncash","Llamellín"],["Áncash","Chacas"],["Áncash","Chiquián"],["Áncash","Carhuaz"],["Áncash","San Luis"],["Áncash","Casma"],["Áncash","Corongo"],["Áncash","Huari"],["Áncash","Huarmey"],["Áncash","Caraz"],["Áncash","Piscobamba"],["Áncash","Ocros"],["Áncash","Cabana"],["Áncash","Pomabamba"],["Áncash","Recuay"],["Áncash","Chimbote"],["Áncash","Sihuas"],["Áncash","Yungay"],["Apurímac","Abancay"],["Apurímac","Andahuaylas"],["Apurímac","Antabamba"],["Apurímac","Chalhuanca"],["Apurímac","Tambobamba"],["Apurímac","Chincheros"],["Apurímac","Chuquibambilla"],["Arequipa","Arequipa"],["Arequipa","Camaná"],["Arequipa","Caravelí"],["Arequipa","Aplao"],["Arequipa","Chivay"],["Arequipa","Chuquibamba"],["Arequipa","Mollendo"],["Arequipa","Cotahuasi"],["Ayacucho","Ayacucho"],["Ayacucho","Cangallo"],["Ayacucho","Sancos"],["Ayacucho","Huanta"],["Ayacucho","San Miguel"],["Ayacucho","Puquio"],["Ayacucho","Coracora"],["Ayacucho","Pausa"],["Ayacucho","Querobamba"],["Ayacucho","Huancapi"],["Ayacucho","Vilcas Huamán"],["Cajamarca","Cajamarca"],["Cajamarca","Cajabamba"],["Cajamarca","Celendín"],["Cajamarca","Chota"],["Cajamarca","Contumazá"],["Cajamarca","Cutervo"],["Cajamarca","Bambamarca"],["Cajamarca","Jaén"],["Cajamarca","San Ignacio"],["Cajamarca","San Marcos"],["Cajamarca","San Miguel de Pallaques"],["Cajamarca","San Pablo"],["Cajamarca","Santa Cruz"],["Callao","Callao"],["Cusco","Cusco"],["Cusco","Acomayo"],["Cusco","Anta"],["Cusco","Calca"],["Cusco","Yanaoca"],["Cusco","Sicuani"],["Cusco","Santo Tomás"],["Cusco","Yauri"],["Cusco","Quillabamba"],["Cusco","Paruro"],["Cusco","Paucartambo"],["Cusco","Urcos"],["Cusco","Urubamba"],["Huancavelica","Huancavelica"],["Huancavelica","Acobamba"],["Huancavelica","Lircay"],["Huancavelica","Castrovirreyna"],["Huancavelica","Churcampa"],["Huancavelica","Huaytará"],["Huancavelica","Pampas"],["Huánuco","Huánuco"],["Huánuco","Ambo"],["Huánuco","La Unión"],["Huánuco","Huacaybamba"],["Huánuco","Llata"],["Huánuco","Tingo María"],["Huánuco","Huacrachuco"],["Huánuco","Panao"],["Huánuco","Puerto Inca"],["Huánuco","Jesús"],["Huánuco","Chavinillo"],["Ica","Ica"],["Ica","Chincha Alta"],["Ica","Nasca"],["Ica","Palpa"],["Ica","Pisco"],["Junín","Huancayo"],["Junín","Concepción"],["Junín","La Merced"],["Junín","Jauja"],["Junín","Junín"],["Junín","Satipo"],["Junín","Tarma"],["Junín","La Oroya"],["Junín","Chupaca"],["La Libertad","Trujillo"],["La Libertad","Ascope"],["La Libertad","Bolívar"],["La Libertad","Chepén"],["La Libertad","Julcán"],["La Libertad","Otuzco"],["La Libertad","Cascas"],["La Libertad","Pacasmayo"],["La Libertad","Tayabamba"],["La Libertad","Huamachuco"],["La Libertad","Santiago de Chuco"],["La Libertad","Virú"],["Lambayeque","Chiclayo"],["Lambayeque","Ferreñafe"],["Lambayeque","Lambayeque"],["Lima","Lima"],["Lima","Barranca"],["Lima","Cajatambo"],["Lima","Canta"],["Lima","San Vicente de Cañete"],["Lima","Huaral"],["Lima","Matucana"],["Lima","Huacho"],["Lima","Oyón"],["Lima","Yauyos"],["Loreto","Iquitos"],["Loreto","Yurimaguas"],["Loreto","Nauta"],["Loreto","Caballococha"],["Loreto","Requena"],["Loreto","Contamana"],["Loreto","San Lorenzo"],["Loreto","San Antonio del Estrecho"],["Madre de Dios","Puerto Maldonado"],["Madre de Dios","Salvación"],["Madre de Dios","Iñapari"],["Moquegua","Moquegua"],["Moquegua","Omate"],["Moquegua","Ilo"],["Pasco","Cerro de Pasco"],["Pasco","Yanahuanca"],["Pasco","Oxapampa"],["Piura","Piura"],["Piura","Ayabaca"],["Piura","Huancabamba"],["Piura","Chulucanas"],["Piura","Paita"],["Piura","Sullana"],["Piura","Talara"],["Piura","Sechura"],["Puno","Puno"],["Puno","Azángaro"],["Puno","Macusani"],["Puno","Juli"],["Puno","Ilave"],["Puno","Huancané"],["Puno","Lampa"],["Puno","Ayaviri"],["Puno","Moho"],["Puno","Putina"],["Puno","Juliaca"],["Puno","Sandia"],["Puno","Yunguyo"],["San Martín","Moyobamba"],["San Martín","Bellavista"],["San Martín","San José de Sisa"],["San Martín","Saposoa"],["San Martín","Lamas"],["San Martín","Juanjuí"],["San Martín","Picota"],["San Martín","Rioja"],["San Martín","Tarapoto"],["San Martín","Tocache"],["Tacna","Tacna"],["Tacna","Candarave"],["Tacna","Locumba"],["Tacna","Tarata"],["Tumbes","Tumbes"],["Tumbes","Zorritos"],["Tumbes","Zarumilla"],["Ucayali","Pucallpa"],["Ucayali","Atalaya"],["Ucayali","Aguaytía"],["Ucayali","Esperanza"]],"MX":[["Aguascalientes","Aguascalientes"],["Baja California","Mexicali"],["Baja California Sur","La Paz"],["Campeche","San Francisco de Campeche"],["Chiapas","Tuxtla Gutiérrez"],["Chihuahua","Chihuahua"],["Ciudad de México","Ciudad de México"],["Coahuila","Saltillo"],["Colima","Colima"],["Durango","Victoria de Durango"],["Guanajuato","Guanajuato"],["Guerrero","Chilpancingo"],["Hidalgo","Pachuca"],["Jalisco","Guadalajara"],["México","Toluca"],["Michoacán","Morelia"],["Morelos","Cuernavaca"],["Nayarit","Tepic"],["Nuevo León","Monterrey"],["Oaxaca","Oaxaca de Juárez"],["Puebla","Puebla"],["Querétaro","Santiago de Querétaro"],["Quintana Roo","Chetumal"],["San Luis Potosí","San Luis Potosí"],["Sinaloa","Culiacán"],["Sonora","Hermosillo"],["Tabasco","Villahermosa"],["Tamaulipas","Ciudad Victoria"],["Tlaxcala","Tlaxcala"],["Veracruz","Xalapa"],["Yucatán","Mérida"],["Zacatecas","Zacatecas"]],"AR":[["Buenos Aires","La Plata"],["Catamarca","San Fernando del Valle de Catamarca"],["Chaco","Resistencia"],["Chubut","Rawson"],["Ciudad Autónoma de Buenos Aires","Buenos Aires"],["Córdoba","Córdoba"],["Corrientes","Corrientes"],["Entre Ríos","Paraná"],["Formosa","Formosa"],["Jujuy","San Salvador de Jujuy"],["La Pampa","Santa Rosa"],["La Rioja","La Rioja"],["Mendoza","Mendoza"],["Misiones","Posadas"],["Neuquén","Neuquén"],["Río Negro","Viedma"],["Salta","Salta"],["San Juan","San Juan"],["San Luis","San Luis"],["Santa Cruz","Río Gallegos"],["Santa Fe","Santa Fe"],["Santiago del Estero","Santiago del Estero"],["Tierra del Fuego","Ushuaia"],["Tucumán","San Miguel de Tucumán"]],"BR":[["Acre","Río Branco"],["Alagoas","Maceió"],["Amapá","Macapá"],["Amazonas","Manaos"],["Bahía","Salvador"],["Ceará","Fortaleza"],["Distrito Federal","Brasilia"],["Espírito Santo","Vitória"],["Goiás","Goiânia"],["Maranhão","São Luís"],["Mato Grosso","Cuiabá"],["Mato Grosso do Sul","Campo Grande"],["Minas Gerais","Belo Horizonte"],["Pará","Belém"],["Paraíba","João Pessoa"],["Paraná","Curitiba"],["Pernambuco","Recife"],["Piauí","Teresina"],["Río de Janeiro","Río de Janeiro"],["Río Grande do Norte","Natal"],["Río Grande do Sul","Porto Alegre"],["Rondônia","Porto Velho"],["Roraima","Boa Vista"],["Santa Catarina","Florianópolis"],["São Paulo","São Paulo"],["Sergipe","Aracaju"],["Tocantins","Palmas"]],"CO":[["Amazonas","Leticia"],["Antioquia","Medellín"],["Arauca","Arauca"],["Atlántico","Barranquilla"],["Bogotá D.C.","Bogotá"],["Bolívar","Cartagena de Indias"],["Boyacá","Tunja"],["Caldas","Manizales"],["Caquetá","Florencia"],["Casanare","Yopal"],["Cauca","Popayán"],["Cesar","Valledupar"],["Chocó","Quibdó"],["Córdoba","Montería"],["Cundinamarca","Bogotá"],["Guainía","Inírida"],["Guaviare","San José del Guaviare"],["Huila","Neiva"],["La Guajira","Riohacha"],["Magdalena","Santa Marta"],["Meta","Villavicencio"],["Nariño","Pasto"],["Norte de Santander","Cúcuta"],["Putumayo","Mocoa"],["Quindío","Armenia"],["Risaralda","Pereira"],["San Andrés y Providencia","San Andrés"],["Santander","Bucaramanga"],["Sucre","Sincelejo"],["Tolima","Ibagué"],["Valle del Cauca","Cali"],["Vaupés","Mitú"],["Vichada","Puerto Carreño"]],"CL":[["Arica y Parinacota","Arica"],["Tarapacá","Iquique"],["Antofagasta","Antofagasta"],["Atacama","Copiapó"],["Coquimbo","La Serena"],["Valparaíso","Valparaíso"],["Región Metropolitana de Santiago","Santiago"],["Libertador General Bernardo O’Higgins","Rancagua"],["Maule","Talca"],["Ñuble","Chillán"],["Biobío","Concepción"],["La Araucanía","Temuco"],["Los Ríos","Valdivia"],["Los Lagos","Puerto Montt"],["Aysén","Coyhaique"],["Magallanes y de la Antártica Chilena","Punta Arenas"]],"VE":[["Amazonas","Puerto Ayacucho"],["Anzoátegui","Barcelona"],["Apure","San Fernando de Apure"],["Aragua","Maracay"],["Barinas","Barinas"],["Bolívar","Ciudad Bolívar"],["Carabobo","Valencia"],["Cojedes","San Carlos"],["Delta Amacuro","Tucupita"],["Distrito Capital","Caracas"],["Falcón","Coro"],["Guárico","San Juan de los Morros"],["La Guaira","La Guaira"],["Lara","Barquisimeto"],["Mérida","Mérida"],["Miranda","Los Teques"],["Monagas","Maturín"],["Nueva Esparta","La Asunción"],["Portuguesa","Guanare"],["Sucre","Cumaná"],["Táchira","San Cristóbal"],["Trujillo","Trujillo"],["Yaracuy","San Felipe"],["Zulia","Maracaibo"]],"EC":[["Azuay","Cuenca"],["Bolívar","Guaranda"],["Cañar","Azogues"],["Carchi","Tulcán"],["Chimborazo","Riobamba"],["Cotopaxi","Latacunga"],["El Oro","Machala"],["Esmeraldas","Esmeraldas"],["Galápagos","Puerto Baquerizo Moreno"],["Guayas","Guayaquil"],["Imbabura","Ibarra"],["Loja","Loja"],["Los Ríos","Babahoyo"],["Manabí","Portoviejo"],["Morona Santiago","Macas"],["Napo","Tena"],["Orellana","Puerto Francisco de Orellana"],["Pastaza","Puyo"],["Pichincha","Quito"],["Santa Elena","Santa Elena"],["Santo Domingo de los Tsáchilas","Santo Domingo"],["Sucumbíos","Nueva Loja"],["Tungurahua","Ambato"],["Zamora Chinchipe","Zamora"]],"BO":[["Beni","Trinidad"],["Chuquisaca","Sucre"],["Cochabamba","Cochabamba"],["La Paz","La Paz"],["Oruro","Oruro"],["Pando","Cobija"],["Potosí","Potosí"],["Santa Cruz","Santa Cruz de la Sierra"],["Tarija","Tarija"]],"PY":[["Alto Paraguay","Fuerte Olimpo"],["Alto Paraná","Ciudad del Este"],["Amambay","Pedro Juan Caballero"],["Asunción","Asunción"],["Boquerón","Filadelfia"],["Caaguazú","Coronel Oviedo"],["Caazapá","Caazapá"],["Canindeyú","Salto del Guairá"],["Central","Areguá"],["Concepción","Concepción"],["Cordillera","Caacupé"],["Guairá","Villarrica"],["Itapúa","Encarnación"],["Misiones","San Juan Bautista"],["Ñeembucú","Pilar"],["Paraguarí","Paraguarí"],["Presidente Hayes","Villa Hayes"],["San Pedro","San Pedro de Ycuamandiyú"]],"UY":[["Artigas","Artigas"],["Canelones","Canelones"],["Cerro Largo","Melo"],["Colonia","Colonia del Sacramento"],["Durazno","Durazno"],["Flores","Trinidad"],["Florida","Florida"],["Lavalleja","Minas"],["Maldonado","Maldonado"],["Montevideo","Montevideo"],["Paysandú","Paysandú"],["Río Negro","Fray Bentos"],["Rivera","Rivera"],["Rocha","Rocha"],["Salto","Salto"],["San José","San José de Mayo"],["Soriano","Mercedes"],["Tacuarembó","Tacuarembó"],["Treinta y Tres","Treinta y Tres"]],"DO":[["Azua","Azua de Compostela"],["Baoruco","Neiba"],["Barahona","Santa Cruz de Barahona"],["Dajabón","Dajabón"],["Distrito Nacional","Santo Domingo"],["Duarte","San Francisco de Macorís"],["Elías Piña","Comendador"],["El Seibo","Santa Cruz de El Seibo"],["Espaillat","Moca"],["Hato Mayor","Hato Mayor del Rey"],["Hermanas Mirabal","Salcedo"],["Independencia","Jimaní"],["La Altagracia","Salvaleón de Higüey"],["La Romana","La Romana"],["La Vega","La Concepción de La Vega"],["María Trinidad Sánchez","Nagua"],["Monseñor Nouel","Bonao"],["Monte Cristi","San Fernando de Monte Cristi"],["Monte Plata","Monte Plata"],["Pedernales","Pedernales"],["Peravia","Baní"],["Puerto Plata","San Felipe de Puerto Plata"],["Samaná","Santa Bárbara de Samaná"],["San Cristóbal","San Cristóbal"],["San José de Ocoa","San José de Ocoa"],["San Juan","San Juan de la Maguana"],["San Pedro de Macorís","San Pedro de Macorís"],["Sánchez Ramírez","Cotuí"],["Santiago","Santiago de los Caballeros"],["Santiago Rodríguez","Sabaneta"],["Santo Domingo","Santo Domingo Este"],["Valverde","Mao"]],"GT":[["Alta Verapaz","Cobán"],["Baja Verapaz","Salamá"],["Chimaltenango","Chimaltenango"],["Chiquimula","Chiquimula"],["El Progreso","Guastatoya"],["Escuintla","Escuintla"],["Guatemala","Ciudad de Guatemala"],["Huehuetenango","Huehuetenango"],["Izabal","Puerto Barrios"],["Jalapa","Jalapa"],["Jutiapa","Jutiapa"],["Petén","Flores"],["Quetzaltenango","Quetzaltenango"],["Quiché","Santa Cruz del Quiché"],["Retalhuleu","Retalhuleu"],["Sacatepéquez","Antigua Guatemala"],["San Marcos","San Marcos"],["Santa Rosa","Cuilapa"],["Sololá","Sololá"],["Suchitepéquez","Mazatenango"],["Totonicapán","Totonicapán"],["Zacapa","Zacapa"]],"HN":[["Atlántida","La Ceiba"],["Choluteca","Choluteca"],["Colón","Trujillo"],["Comayagua","Comayagua"],["Copán","Santa Rosa de Copán"],["Cortés","San Pedro Sula"],["El Paraíso","Yuscarán"],["Francisco Morazán","Tegucigalpa"],["Gracias a Dios","Puerto Lempira"],["Intibucá","La Esperanza"],["Islas de la Bahía","Roatán"],["La Paz","La Paz"],["Lempira","Gracias"],["Ocotepeque","Ocotepeque"],["Olancho","Juticalpa"],["Santa Bárbara","Santa Bárbara"],["Valle","Nacaome"],["Yoro","Yoro"]],"SV":[["Ahuachapán","Ahuachapán"],["Cabañas","Sensuntepeque"],["Chalatenango","Chalatenango"],["Cuscatlán","Cojutepeque"],["La Libertad","Santa Tecla"],["La Paz","Zacatecoluca"],["La Unión","La Unión"],["Morazán","San Francisco Gotera"],["San Miguel","San Miguel"],["San Salvador","San Salvador"],["San Vicente","San Vicente"],["Santa Ana","Santa Ana"],["Sonsonate","Sonsonate"],["Usulután","Usulután"]],"NI":[["Boaco","Boaco"],["Carazo","Jinotepe"],["Chinandega","Chinandega"],["Chontales","Juigalpa"],["Costa Caribe Norte","Bilwi"],["Costa Caribe Sur","Bluefields"],["Estelí","Estelí"],["Granada","Granada"],["Jinotega","Jinotega"],["León","León"],["Madriz","Somoto"],["Managua","Managua"],["Masaya","Masaya"],["Matagalpa","Matagalpa"],["Nueva Segovia","Ocotal"],["Río San Juan","San Carlos"],["Rivas","Rivas"]],"CR":[["Alajuela","Alajuela"],["Cartago","Cartago"],["Guanacaste","Liberia"],["Heredia","Heredia"],["Limón","Limón"],["Puntarenas","Puntarenas"],["San José","San José"]],"PA":[["Bocas del Toro","Bocas del Toro"],["Chiriquí","David"],["Coclé","Penonomé"],["Colón","Colón"],["Darién","La Palma"],["Herrera","Chitré"],["Los Santos","Las Tablas"],["Panamá","Ciudad de Panamá"],["Panamá Oeste","La Chorrera"],["Veraguas","Santiago de Veraguas"]],"PR":[["Arecibo","Arecibo"],["Mayagüez","Mayagüez"],["Ponce","Ponce"],["San Juan","San Juan"]],"US":[["Alabama","Montgomery"],["Alaska","Juneau"],["Arizona","Phoenix"],["Arkansas","Little Rock"],["California","Sacramento"],["Colorado","Denver"],["Connecticut","Hartford"],["Delaware","Dover"],["District of Columbia","Washington"],["Florida","Tallahassee"],["Georgia","Atlanta"],["Hawaii","Honolulu"],["Idaho","Boise"],["Illinois","Springfield"],["Indiana","Indianapolis"],["Iowa","Des Moines"],["Kansas","Topeka"],["Kentucky","Frankfort"],["Louisiana","Baton Rouge"],["Maine","Augusta"],["Maryland","Annapolis"],["Massachusetts","Boston"],["Michigan","Lansing"],["Minnesota","Saint Paul"],["Mississippi","Jackson"],["Missouri","Jefferson City"],["Montana","Helena"],["Nebraska","Lincoln"],["Nevada","Carson City"],["New Hampshire","Concord"],["New Jersey","Trenton"],["New Mexico","Santa Fe"],["New York","Albany"],["North Carolina","Raleigh"],["North Dakota","Bismarck"],["Ohio","Columbus"],["Oklahoma","Oklahoma City"],["Oregon","Salem"],["Pennsylvania","Harrisburg"],["Rhode Island","Providence"],["South Carolina","Columbia"],["South Dakota","Pierre"],["Tennessee","Nashville"],["Texas","Austin"],["Utah","Salt Lake City"],["Vermont","Montpelier"],["Virginia","Richmond"],["Washington","Olympia"],["West Virginia","Charleston"],["Wisconsin","Madison"],["Wyoming","Cheyenne"]],"CA":[["Alberta","Edmonton"],["British Columbia","Victoria"],["Manitoba","Winnipeg"],["New Brunswick","Fredericton"],["Newfoundland and Labrador","St. John’s"],["Northwest Territories","Yellowknife"],["Nova Scotia","Halifax"],["Nunavut","Iqaluit"],["Ontario","Toronto"],["Ontario","Ottawa"],["Prince Edward Island","Charlottetown"],["Quebec","Quebec City"],["Saskatchewan","Regina"],["Yukon","Whitehorse"]],"BZ":[["Belize","Belize City"],["Cayo","Belmopan"],["Cayo","San Ignacio"],["Corozal","Corozal"],["Orange Walk","Orange Walk Town"],["Stann Creek","Dangriga"],["Toledo","Punta Gorda"]]};
+  const norm=t=>t.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+  const normq=t=>norm(t).replace(/\s*,\s*/g,', ').replace(/\s+/g,' ').replace(/^\s+|\s+$/g,'');
+  const FILAS=[];
+  for(const cc in DATOS)for(const [e,c] of DATOS[cc]){
+    const label=PAIS[cc]+', '+e+', '+c;
+    FILAS.push({cc,e,c,label,k:ALIAS[cc]?[norm(label),norm(ALIAS[cc]+', '+e+', '+c)]:[norm(label)]});
+  }
+  window.HH_PAISES=Object.fromEntries(Object.keys(DATOS).map(c=>[c,ALIAS[c]||PAIS[c]])); // países donde se puede publicar (el formulario Publicar los usa)
+  const alfa=(x,y)=>x.label.localeCompare(y.label,'es',{sensitivity:'base'});
+  // negrita en lo que ya escribió la persona (siempre es el inicio del texto)
   function resaltar(texto,q){
-    const fr=document.createDocumentFragment(),n=sinTilde(q).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-    if(!n){fr.append(texto);return fr}
-    const re=new RegExp('(^|[\\s,(-])('+n+')','gi'),base=sinTilde(texto);
-    let ult=0,m;
-    while((m=re.exec(base))){
-      const i=m.index+m[1].length;
-      fr.append(texto.slice(ult,i));
-      const s=document.createElement('strong');s.textContent=texto.slice(i,i+m[2].length);fr.append(s);
-      ult=i+m[2].length;
-    }
-    fr.append(texto.slice(ult));
+    const fr=document.createDocumentFragment(),qn=normq(q);
+    if(qn&&norm(texto).startsWith(qn)){const b=document.createElement('strong');b.textContent=texto.slice(0,qn.length);fr.append(b,texto.slice(qn.length))}
+    else fr.append(texto);
     return fr;
   }
   function pintar(){
     act=-1;
     if(!lista.length){msg('No encontramos ese lugar.');return}
-    const cab=document.createElement('p');cab.className='cab';cab.textContent='Ubicaciones';
-    sug.replaceChildren(cab,...lista.map((f,i)=>{
+    sug.replaceChildren(...lista.map((f,i)=>{
       const b=document.createElement('button');
-      b.type='button';b.className='opt';b.dataset.i=i;b.append(resaltar(info(f).label,qAct));
+      b.type='button';b.className='opt';b.dataset.i=i;b.append(resaltar(f.label,qAct));
       return b;
     }));
   }
-  async function buscar(){
-    const q=inp.value.trim();
-    if(!q)return;
-    qAct=q;
-    const n=++seq;
-    if(ctl)ctl.abort();
-    ctl=new AbortController();
+  function buscar(){
+    qAct=inp.value;
+    const q=normq(qAct);
+    if(!q){lista=[];sug.hidden=true;return}
+    lista=FILAS.filter(f=>f.k.some(k=>k.startsWith(q))).sort(alfa).slice(0,MAX);
     sug.hidden=false;
-    if(!lista.length)msg('Buscando…');
-    try{
-      // busca solo en América (datos reales de OpenStreetMap); bbox = oeste,sur,este,norte
-      const r=await fetch('https://photon.komoot.io/api/?limit=10&bbox=-170,-57,-30,72&layer=country&layer=state&layer=county&layer=city&layer=district&layer=locality&q='+encodeURIComponent(q),{signal:ctl.signal});
-      if(!r.ok)throw new Error(r.status);
-      const j=await r.json();
-      if(n!==seq)return;
-      const vistos=new Set();
-      lista=(j.features||[]).filter(f=>{if(f.properties.type&&!TIPOS.has(f.properties.type))return false;const {tit,label}=info(f);if(!tit||vistos.has(label))return false;vistos.add(label);return true});
-    }catch(e){if(e.name==='AbortError')return;msg('No se pudo buscar. Revisa tu conexión a internet.');return}
     pintar();
   }
-  function ir(f){
-    const [lng,lat]=f.geometry.coordinates,ex=f.properties.extent,nom=info(f).tit;
-    const b=ex?L.latLngBounds([[ex[3],ex[0]],[ex[1],ex[2]]]):L.latLngBounds([[lat,lng],[lat,lng]]);
-    const c=b.getCenter();
-    b.extend([c.lat-.01,c.lng-.01]).extend([c.lat+.01,c.lng+.01]); // mínimo ~2 km de lado
-    inp.value=info(f).label;estado.zona=b;estado.zonaNombre=nom;
-    sug.hidden=true;
-    if(mapa)mapa.fitBounds(b,{padding:[30,30],maxZoom:16});
+  // al elegir: el mapa va a esa capital (se ubica con el mapa real); si no responde, queda el país
+  async function ir(f){
+    const t=++irSeq,[S,W,N,E]=CAJA[f.cc];
+    inp.value=f.label;sug.hidden=true;
+    let b=L.latLngBounds([[S,W],[N,E]]),max=6;
+    try{
+      const lim=new Promise((_,no)=>setTimeout(()=>no(new Error('tiempo')),4000));
+      const r=await Promise.race([fetch('https://photon.komoot.io/api/?limit=5&bbox=-170,-57,-30,72&q='+encodeURIComponent(f.c+', '+f.e+', '+PAIS[f.cc])),lim]);
+      const g=((await r.json()).features||[]).find(x=>(x.properties.countrycode||'').toUpperCase()===f.cc);
+      if(g){
+        const ex=g.properties.extent,[lng,lat]=g.geometry.coordinates;
+        b=ex?L.latLngBounds([[ex[3],ex[0]],[ex[1],ex[2]]]):L.latLngBounds([[lat,lng],[lat,lng]]);
+        const c=b.getCenter();b.extend([c.lat-.01,c.lng-.01]).extend([c.lat+.01,c.lng+.01]);max=16;
+      }
+    }catch(e){}
+    if(t!==irSeq)return;
+    estado.zona=b;estado.zonaNombre=f.c;
+    if(mapa)mapa.fitBounds(b,{padding:[30,30],maxZoom:max});
     render();
   }
   function mover(d){
@@ -876,9 +896,8 @@ iniciarMapa();render();cargarPublicadas();
     else if(e.key==='Escape')sug.hidden=true;
   });
   inp.addEventListener('input',()=>{
-    clearTimeout(tm);
-    if(inp.value.trim()){tm=setTimeout(buscar,250);return}  // sugiere mientras se escribe
-    seq++;lista=[];sug.hidden=true;
+    if(inp.value.trim()){buscar();return}   // sugiere mientras se escribe, al instante
+    lista=[];sug.hidden=true;irSeq++;
     if(estado.zona){estado.zona=null;estado.zonaNombre='';if(mapa)mapa.fitBounds(LATAM);render()} // al borrar el texto se quita la zona
   });
   inp.addEventListener('focus',()=>{if(lista.length&&inp.value.trim()){sug.hidden=false}});
@@ -1013,9 +1032,9 @@ $('#list').addEventListener('pointerout',e=>{const c=e.target.closest('.card');i
   });
   pintarFotos();
   const geo=async q=>{
-    const r=await fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&accept-language=es&q='+encodeURIComponent(q));
+    const r=await fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&addressdetails=1&accept-language=es&q='+encodeURIComponent(q));
     if(!r.ok)throw new Error(r.status);
-    const l=await r.json();return l[0]?{lat:+l[0].lat,lng:+l[0].lon}:null;
+    const l=await r.json();return l[0]?{lat:+l[0].lat,lng:+l[0].lon,cc:((l[0].address||{}).country_code||'').toUpperCase()}:null;
   };
   f.addEventListener('submit',async e=>{
     e.preventDefault();
@@ -1039,6 +1058,7 @@ $('#list').addEventListener('pointerout',e=>{const c=e.target.closest('.card');i
       let pos=null;
       try{pos=await geo(dir+', '+zona)||await geo(zona)}catch(_){}
       if(!pos){say('No pudimos ubicar esa dirección en el mapa. Revisa la zona.');send.disabled=false;return}
+      if(window.HH_PAISES&&!HH_PAISES[pos.cc]){say('Por ahora solo se puede publicar en: '+Object.values(HH_PAISES).sort((x,y)=>x.localeCompare(y,'es')).join(', ')+'. Revisa la zona o escribe el país.');send.disabled=false;return}
       say('Verificando…');
       const token=await esperarTS();
       if(!token){say('No pudimos verificar que eres una persona. Recarga la página e inténtalo de nuevo.');nuevoTS();send.disabled=false;return}
