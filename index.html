@@ -60,10 +60,18 @@ textarea::placeholder{color:var(--dim)}
 .stats div{border:1px solid var(--line);border-radius:14px;padding:20px 6px}
 .stats b{display:block;font-size:1.8rem}
 .stats small{color:var(--dim)}
-#pk{position:fixed;right:10px;top:calc(env(safe-area-inset-top,0px) + 10px);z-index:20;text-align:right}
-#pk>button{border-radius:50%;width:42px;height:42px;padding:0;background:var(--card);font-size:1.1rem}
-#pan{display:none;margin-top:8px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;width:190px}
-#pan.open{display:block}
+#pk{position:fixed;right:10px;top:calc(env(safe-area-inset-top,0px) + 10px);z-index:20;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.btns{display:flex;gap:10px}
+.btns button{border-radius:50%;width:84px;height:84px;padding:0;background:var(--card);font-size:2.2rem;line-height:1}
+#pan,#vp{display:none;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px}
+#pan{width:190px}
+#vp{width:230px;text-align:center}
+#pan.open,#vp.open{display:block}
+.vl{font-size:.8rem;color:var(--dim)}
+.vn{font-size:2.6rem;font-weight:700;line-height:1.1}
+#vol{width:100%;accent-color:var(--c);margin:10px 0}
+#vt{width:100%}
+@media(max-width:899px){main{padding-top:110px}}
 #gm{width:100%;margin-bottom:12px}
 .sw{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
 .sw i{aspect-ratio:1;border-radius:50%;cursor:pointer;border:2px solid transparent}
@@ -72,7 +80,16 @@ textarea::placeholder{color:var(--dim)}
 </head>
 <body>
 <div id="pk">
-  <button id="pb" aria-label="Cambiar color">🎨</button>
+  <div class="btns">
+    <button id="sb" aria-label="Sonido">🔊</button>
+    <button id="pb" aria-label="Cambiar color">🎨</button>
+  </div>
+  <div id="vp">
+    <div class="vl">Volumen</div>
+    <div class="vn" id="vv">5</div>
+    <input type="range" id="vol" min="1" max="10" step="1">
+    <button id="vt">▶ Probar sonido</button>
+  </div>
   <div id="pan">
     <button id="gm">🎮 Modo gamer</button>
     <div class="sw" id="sw"></div>
@@ -162,6 +179,7 @@ function nextHour(){st.th=(nowIn(st.tz)[0]+1)%24;st.tm=0;st.ts=0}
 nextHour();
 st.th=Math.min(23,st.th);st.wh=Math.min(23,st.wh);st.rh=Math.min(23,st.rh);
 st.rounds=Math.max(1,Math.min(100,st.rounds||1));
+st.vol=Math.max(1,Math.min(10,Math.round(st.vol||5)));
 let goals=store.get('goals2',[{text:'',done:false}]);
 if(!goals.length)goals=[{text:'',done:false}];
 let tot=store.get('tot2',0);
@@ -182,7 +200,11 @@ function applyColor(){
   if(st.gamer)gt=setInterval(()=>{st.hue=(st.hue+1)%360;document.documentElement.style.setProperty('--h',st.hue)},60);
 }
 $('gm').onclick=()=>{st.gamer=!st.gamer;applyColor();save()};
-$('pb').onclick=()=>$('pan').classList.toggle('open');
+$('pb').onclick=()=>{$('vp').classList.remove('open');$('pan').classList.toggle('open')};
+$('sb').onclick=()=>{$('pan').classList.remove('open');$('vp').classList.toggle('open')};
+$('vol').value=st.vol;$('vv').textContent=st.vol;
+$('vol').oninput=()=>{st.vol=+$('vol').value;$('vv').textContent=st.vol;save()};
+$('vt').onclick=()=>beep();
 
 /* ---------- Utilidades de tiempo ---------- */
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v||0));
@@ -216,11 +238,23 @@ function setMode(m){
   mode=m;$('mw').classList.toggle('on',m==='w');$('mr').classList.toggle('on',m==='r');
   left=total(m);if(running)end=Date.now()+left*1000;draw();
 }
+/* Sonido de temporizador: 3 ráfagas de 4 pitidos cortos */
 function beep(){
-  try{const a=new (window.AudioContext||window.webkitAudioContext)();
-    [0,.25,.5].forEach(d=>{const o=a.createOscillator(),g=a.createGain();o.frequency.value=660;
-      o.connect(g);g.connect(a.destination);g.gain.setValueAtTime(.15,a.currentTime+d);
-      g.gain.exponentialRampToValueAtTime(.001,a.currentTime+d+.2);o.start(a.currentTime+d);o.stop(a.currentTime+d+.22)})}catch(e){}
+  try{
+    const a=new (window.AudioContext||window.webkitAudioContext)();
+    const master=a.createGain();master.gain.value=st.vol*0.04;master.connect(a.destination);
+    for(let b=0;b<3;b++)for(let i=0;i<4;i++){
+      const t=a.currentTime+b*0.9+i*0.14;
+      const o=a.createOscillator(),g=a.createGain();
+      o.type='square';o.frequency.value=2000;o.connect(g);g.connect(master);
+      g.gain.setValueAtTime(0.0001,t);
+      g.gain.exponentialRampToValueAtTime(1,t+0.005);
+      g.gain.setValueAtTime(1,t+0.06);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+0.078);
+      o.start(t);o.stop(t+0.08);
+    }
+    setTimeout(()=>a.close(),3500);
+  }catch(e){}
 }
 function account(){
   const now=Date.now();
