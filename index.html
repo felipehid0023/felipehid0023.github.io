@@ -10,47 +10,49 @@ box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:en
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--c);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh}
-main{max-width:640px;margin:0 auto;padding:24px 16px 60px}
-h1{font-size:1.1rem;font-weight:600;margin:6px 0 18px;letter-spacing:.04em}
-h2{font-size:.95rem;margin:0;font-weight:600}
-.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;margin-bottom:18px}
-.head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-.modes{display:flex;gap:8px;justify-content:center;margin-bottom:14px}
-.modes button{flex:1;max-width:160px}
+main{max-width:1120px;margin:0 auto;padding:28px 20px 70px}
+h1{font-size:1.15rem;font-weight:600;margin:6px 0 20px;letter-spacing:.05em}
+h2{font-size:1rem;margin:0;font-weight:600}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:26px;margin-bottom:20px}
+.head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.modes{display:flex;gap:10px;justify-content:center;margin-bottom:16px}
+.modes button{flex:1;max-width:200px}
 button,input,textarea,select{font:inherit;color:inherit}
-button{background:transparent;border:1px solid var(--dim);border-radius:12px;padding:9px 14px;cursor:pointer}
+button{background:transparent;border:1px solid var(--dim);border-radius:12px;padding:10px 18px;cursor:pointer}
 button:hover{background:color-mix(in srgb,var(--c) 14%,transparent)}
 button.on{background:var(--c);color:#0e1014;border-color:var(--c);font-weight:600}
-.time{font-size:clamp(3rem,16vw,5.5rem);font-weight:700;text-align:center;font-variant-numeric:tabular-nums;letter-spacing:.02em;margin:8px 0 2px}
-.status{text-align:center;font-size:.85rem;color:var(--dim);margin-bottom:12px;min-height:1.2em}
-.bar{height:6px;border-radius:6px;background:var(--line);overflow:hidden;margin-bottom:16px}
+.time{font-size:clamp(3.5rem,14vw,8rem);font-weight:700;text-align:center;font-variant-numeric:tabular-nums;letter-spacing:.02em;margin:10px 0 2px}
+.status{text-align:center;font-size:.9rem;color:var(--dim);margin-bottom:14px;min-height:1.3em}
+.bar{height:7px;border-radius:7px;background:var(--line);overflow:hidden;margin-bottom:20px}
 .bar i{display:block;height:100%;width:0;background:var(--c)}
-.ctrl{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;align-items:center}
-.seg{display:flex;border:1px solid var(--dim);border-radius:12px;overflow:hidden}
-.seg button{border:0;border-radius:0;padding:9px 12px}
-.cfg{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;margin-top:20px}
-.cfg>div{border:1px solid var(--line);border-radius:12px;padding:10px}
-.cfg span.t{display:block;font-size:.8rem;color:var(--dim);margin-bottom:6px}
+.ctrl{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;align-items:center}
+.cfg{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-top:26px}
+@media(min-width:900px){.cfg{grid-template-columns:1fr 1fr 1.8fr .7fr}}
+.cfg>div{border:1px solid var(--line);border-radius:14px;padding:14px}
+.cfg span.t{display:block;font-size:.8rem;color:var(--dim);margin-bottom:8px}
 .cfg label,.cfg small{font-size:.85rem}
-.cfg small{display:block;color:var(--dim);margin-top:8px}
-input[type=number],select{background:#0e1014;border:1px solid var(--line);border-radius:8px;padding:7px 8px;outline:none}
-input[type=number]{width:56px}
-select{width:100%;margin-top:8px}
+.cfg small{display:block;color:var(--dim);margin-top:10px}
+.row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.row button{margin-left:6px;padding:8px 16px}
+input[type=number],select{background:#0e1014;border:1px solid var(--line);border-radius:10px;padding:9px 8px;outline:none}
+input[type=number]{width:62px;text-align:center;-moz-appearance:textfield;appearance:textfield}
+input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+select{width:100%;margin-top:10px}
 input:focus,textarea:focus,select:focus{border-color:var(--c);outline:none}
 ul{list-style:none;margin:0;padding:0}
-li{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}
+li{display:flex;align-items:center;gap:14px;padding:10px 0;border-bottom:1px solid var(--line)}
 li:last-child{border:0}
-li input[type=checkbox]{width:22px;height:22px;accent-color:var(--c);flex:none;cursor:pointer}
-li input.g{flex:1;min-width:0;background:transparent;border:0;border-bottom:1px solid transparent;padding:6px 2px}
+li input[type=checkbox]{width:24px;height:24px;accent-color:var(--c);flex:none;cursor:pointer}
+li input.g{flex:1;min-width:0;background:transparent;border:0;border-bottom:1px solid transparent;padding:8px 2px;font-size:1.05rem}
 li input.g::placeholder{color:var(--dim)}
 li input.g:focus{border-bottom-color:var(--c)}
 li.done input.g{text-decoration:line-through;opacity:.45}
-li button{padding:2px 9px;border-radius:8px}
-textarea{width:100%;min-height:140px;resize:vertical;background:#0e1014;border:1px solid var(--line);border-radius:12px;padding:12px;line-height:1.5}
+li button{padding:2px 10px;border-radius:8px}
+textarea{width:100%;min-height:180px;resize:vertical;background:#0e1014;border:1px solid var(--line);border-radius:14px;padding:14px;line-height:1.55}
 textarea::placeholder{color:var(--dim)}
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;text-align:center;margin-top:12px}
-.stats div{border:1px solid var(--line);border-radius:12px;padding:14px 4px}
-.stats b{display:block;font-size:1.35rem}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;text-align:center;margin-top:14px}
+.stats div{border:1px solid var(--line);border-radius:14px;padding:20px 6px}
+.stats b{display:block;font-size:1.8rem}
 .stats small{color:var(--dim)}
 #pk{position:fixed;right:10px;top:calc(env(safe-area-inset-top,0px) + 10px);z-index:20;text-align:right}
 #pk>button{border-radius:50%;width:42px;height:42px;padding:0;background:var(--card);font-size:1.1rem}
@@ -83,29 +85,27 @@ textarea::placeholder{color:var(--dim)}
     <div class="bar"><i id="bar"></i></div>
     <div class="ctrl">
       <button id="go" class="on">Iniciar</button>
-      <div class="seg">
-        <button id="t0" title="Inicia ahora mismo">Libre</button>
-        <button id="t1" title="Espera a la hora indicada y luego inicia solo">A la hora</button>
-      </div>
       <button id="rs">Reiniciar</button>
     </div>
 
     <div class="cfg">
       <div><span class="t">Trabajo</span>
-        <input type="number" id="wh" min="0" max="12"> <label>h</label>
-        <input type="number" id="wm" min="0" max="59"> <label>min</label></div>
+        <div class="row"><input type="number" id="wh"> <label>h</label>
+        <input type="number" id="wm"> <label>min</label></div></div>
       <div><span class="t">Descanso</span>
-        <input type="number" id="rh" min="0" max="12"> <label>h</label>
-        <input type="number" id="rm" min="0" max="59"> <label>min</label></div>
-      <div><span class="t">Hora de inicio (0–24 : 0–59 : 0–59)</span>
-        <input type="number" id="th" min="0" max="24"> :
-        <input type="number" id="tm" min="0" max="59"> :
-        <input type="number" id="ts" min="0" max="59">
+        <div class="row"><input type="number" id="rh"> <label>h</label>
+        <input type="number" id="rm"> <label>min</label></div></div>
+      <div><span class="t">Hora de inicio</span>
+        <div class="row">
+          <input type="number" id="th"> :
+          <input type="number" id="tm"> :
+          <input type="number" id="ts">
+          <button id="em" class="on">Empezar</button>
+        </div>
         <select id="tz"></select>
         <small id="clock"></small></div>
-      <div><span class="t">Rondas (trabajo + descanso)</span>
-        <input type="number" id="rd" min="0" max="99"> <label>veces</label>
-        <small>0 = sin límite</small></div>
+      <div><span class="t">Rondas</span>
+        <div class="row"><input type="number" id="rd"></div></div>
     </div>
   </section>
 
@@ -126,7 +126,7 @@ textarea::placeholder{color:var(--dim)}
       <div><b id="s2">0/0</b><small>Metas cumplidas</small></div>
       <div><b id="s3">0%</b><small>Cumplimiento</small></div>
     </div>
-    <div class="ctrl" style="margin-top:14px"><button id="cl">Reiniciar tiempo total</button></div>
+    <div class="ctrl" style="margin-top:16px"><button id="cl">Reiniciar tiempo total</button></div>
   </section>
 </main>
 
@@ -145,15 +145,20 @@ function nowIn(tz){
   const g=t=>+p.find(x=>x.type===t).value;
   return [g('hour'),g('minute'),g('second')];
 }
-const def={hue:180,gamer:false,wh:0,wm:50,rh:0,rm:10,rounds:4,sync:false,tz:'America/Lima',th:null,tm:0,ts:0};
-let st=Object.assign({},def,store.get('pomo2',{}),store.get('pomo3',{}));
+/* Color por defecto: cian pastel (matiz 180, luminosidad 85%) */
+const def={hue:180,gamer:false,wh:0,wm:50,rh:0,rm:10,rounds:1,tz:'America/Lima',th:null,tm:0,ts:0};
+const old=Object.assign({},store.get('pomo2',{}),store.get('pomo3',{}));
+delete old.rounds;delete old.sync;
+let st=Object.assign({},def,old,store.get('pomo4',{}));
 if(st.th===null)st.th=(nowIn(st.tz)[0]+1)%24;
+st.th=Math.min(23,st.th);st.wh=Math.min(23,st.wh);st.rh=Math.min(23,st.rh);
+st.rounds=Math.max(1,Math.min(100,st.rounds||1));
 let goals=store.get('goals2',[{text:'',done:false}]);
 if(!goals.length)goals=[{text:'',done:false}];
 let tot=store.get('tot2',0);
 $('notes').value=store.get('notes2','');
 let mode='w',running=false,waiting=false,end=0,waitEnd=0,left=0,tick=null,gt=null,lastT=0,round=1,msg='';
-function save(){store.set('pomo3',st)}
+function save(){store.set('pomo4',st)}
 
 /* ---------- Colores (0, 45, 90 … 315) ---------- */
 const hues=[0,45,90,135,315,270,225,180];
@@ -176,10 +181,10 @@ function total(m){return m==='w'?(st.wh*60+st.wm)*60:(st.rh*60+st.rm)*60}
 function fmt(s){s=Math.max(0,Math.ceil(s));return [Math.floor(s/3600),Math.floor(s%3600/60),s%60].map(pad).join(':')}
 function fmtMin(s){const m=Math.floor(s/60);return m>=60?Math.floor(m/60)+' h '+(m%60)+' min':m+' min'}
 function tzName(){return (TZ.find(t=>t[0]===st.tz)||[0,st.tz])[1]}
-function targetHMS(){return pad(st.th%24)+':'+pad(st.tm)+':'+pad(st.ts)}
+function targetHMS(){return pad(st.th)+':'+pad(st.tm)+':'+pad(st.ts)}
 function secsUntil(){
   const [h,m,s]=nowIn(st.tz);
-  let d=((st.th%24)*3600+st.tm*60+st.ts)-(h*3600+m*60+s);
+  let d=(st.th*3600+st.tm*60+st.ts)-(h*3600+m*60+s);
   if(d<0)d+=86400;
   return d-(Date.now()%1000)/1000;
 }
@@ -189,7 +194,7 @@ function status(){
   let t;
   if(waiting)t=`Esperando las ${targetHMS()} (${tzName()}) para iniciar solo`;
   else if(msg)t=msg;
-  else t=`Ronda ${round}${st.rounds>0?' / '+st.rounds:''} · ${mode==='w'?'Trabajo':'Descanso'}`;
+  else t=`Ronda ${round} / ${st.rounds} · ${mode==='w'?'Trabajo':'Descanso'}`;
   $('status').textContent=t;
 }
 function draw(){
@@ -219,7 +224,7 @@ function finish(){
 }
 function loop(){
   if(waiting){
-    if(waitEnd-Date.now()<=0){waiting=false;begin()}else draw();
+    if(waitEnd-Date.now()<=0)begin();else draw();
     return;
   }
   account();
@@ -227,32 +232,39 @@ function loop(){
   if(left<=0){
     beep();
     if(mode==='w')setMode('r');
-    else{round++;if(st.rounds>0&&round>st.rounds){finish();return}setMode('w')}
+    else{round++;if(round>st.rounds){finish();return}setMode('w')}
   }
   draw();
 }
 function begin(){
+  waiting=false;$('em').textContent='Empezar';
   msg='';running=true;end=Date.now()+left*1000;lastT=Date.now();
   $('go').textContent='Pausa';clearInterval(tick);tick=setInterval(loop,250);loop();
 }
+function cancelWait(){waiting=false;clearInterval(tick);$('em').textContent='Empezar'}
+/* Iniciar: arranca libremente, ahora mismo */
 function start(){
   if(total(mode)<=0)return;
-  const fresh=mode==='w'&&round===1&&left>=total('w')-1;
-  if(st.sync&&fresh){
-    const rem=secsUntil();
-    if(rem>0){
-      msg='';waiting=true;waitEnd=Date.now()+rem*1000;
-      $('go').textContent='Cancelar';clearInterval(tick);tick=setInterval(loop,250);draw();return;
-    }
-  }
+  if(waiting)cancelWait();
   begin();
 }
+/* Empezar: espera a la hora indicada y luego inicia el pomodoro desde cero */
+function schedule(){
+  if(waiting){cancelWait();draw();return}
+  if(total('w')<=0)return;
+  pause();round=1;msg='';setMode('w');
+  const rem=secsUntil();
+  if(rem<=0){begin();return}
+  waiting=true;waitEnd=Date.now()+rem*1000;$('em').textContent='Cancelar';
+  clearInterval(tick);tick=setInterval(loop,250);draw();
+}
 function pause(){
-  if(waiting){waiting=false;clearInterval(tick);$('go').textContent='Iniciar';draw();return}
+  if(waiting){cancelWait();draw();return}
   if(running){account();left=Math.max(0,(end-Date.now())/1000)}
   running=false;clearInterval(tick);$('go').textContent='Iniciar';draw();
 }
-$('go').onclick=()=>(running||waiting)?pause():start();
+$('go').onclick=()=>running?pause():start();
+$('em').onclick=schedule;
 $('rs').onclick=()=>{pause();round=1;msg='';setMode('w')};
 $('mw').onclick=()=>{pause();msg='';setMode('w')};
 $('mr').onclick=()=>{pause();msg='';setMode('r')};
@@ -261,15 +273,15 @@ $('mr').onclick=()=>{pause();msg='';setMode('r')};
 TZ.forEach(([v,n])=>{const o=document.createElement('option');o.value=v;o.textContent=n;$('tz').appendChild(o)});
 $('tz').value=st.tz;
 $('tz').onchange=()=>{st.tz=$('tz').value;save();clock();draw()};
-[['wh','wh',0,12],['wm','wm',0,59],['rh','rh',0,12],['rm','rm',0,59],
- ['th','th',0,24],['tm','tm',0,59],['ts','ts',0,59],['rd','rounds',0,99]].forEach(([id,k,a,b])=>{
-  const el=$(id);el.value=st[k];
+[['wh','wh',0,23],['wm','wm',0,59],['rh','rh',0,23],['rm','rm',0,59],
+ ['th','th',0,23],['tm','tm',0,59],['ts','ts',0,59],['rd','rounds',1,100]].forEach(([id,k,a,b])=>{
+  const el=$(id);el.value=st[k];el.min=a;el.max=b;el.inputMode='numeric';
+  el.onkeydown=e=>{if(['e','E','+','-','.',',','ArrowUp','ArrowDown'].includes(e.key))e.preventDefault()};
+  el.addEventListener('wheel',e=>e.preventDefault(),{passive:false});
+  el.oninput=()=>{if(el.value!==''&&+el.value>b)el.value=b};
   el.onchange=()=>{st[k]=clamp(parseInt(el.value),a,b);el.value=st[k];save();
     if(!running&&!waiting){left=total(mode)}draw()}
 });
-function setSync(v){st.sync=v;$('t0').classList.toggle('on',!v);$('t1').classList.toggle('on',v);save()}
-$('t0').onclick=()=>setSync(false);
-$('t1').onclick=()=>setSync(true);
 function clock(){const [h,m,s]=nowIn(st.tz);$('clock').textContent=`Hora ahora en ${tzName()}: ${pad(h)}:${pad(m)}:${pad(s)}`}
 setInterval(clock,1000);
 
@@ -309,7 +321,7 @@ $('notes').oninput=e=>store.set('notes2',e.target.value);
 $('cl').onclick=()=>{if(confirm('¿Reiniciar el tiempo total a 0?')){tot=0;store.set('tot2',0);stats()}};
 
 /* ---------- Inicio ---------- */
-setSync(st.sync);applyColor();clock();left=total('w');draw();renderGoals();
+applyColor();clock();left=total('w');draw();renderGoals();
 </script>
 </body>
 </html>
