@@ -27,13 +27,8 @@ button.on{background:var(--c);color:#0e1014;border-color:var(--c);font-weight:60
 .bar i{display:block;height:100%;width:0;background:var(--c)}
 .ctrl{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;align-items:center}
 .cfg{display:grid;grid-template-columns:1fr;gap:14px;margin-top:26px}
-@media(min-width:900px){
-.cfg{grid-template-columns:1.7fr 1fr 1fr}
-.c-hora{grid-column:1;grid-row:1/3}
-.c-trab{grid-column:2;grid-row:1}
-.c-desc{grid-column:2;grid-row:2}
-.c-ron{grid-column:3;grid-row:1/3}
-}
+@media(min-width:900px){.cfg{grid-template-columns:1.7fr 1fr 1fr}}
+.c-td .sub+.sub{border-top:1px solid var(--line);margin-top:12px;padding-top:12px}
 .cfg>div{border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;justify-content:center;min-width:0}
 .cfg span.t{display:block;font-size:.8rem;color:var(--dim);margin-bottom:8px}
 .cfg label,.cfg small{font-size:.85rem}
@@ -42,8 +37,8 @@ button.on{background:var(--c);color:#0e1014;border-color:var(--c);font-weight:60
 .row button{margin-left:6px;padding:8px 16px}
 .c-hora .row input[type=number]{width:56px}
 .cfg .c-ron{align-items:center;text-align:center;overflow:hidden}
-.cfg .c-ron span.t{font-size:clamp(1.8rem,4.5vw,3.4rem);font-weight:700;color:var(--c);margin:0 0 4px}
-.cfg .c-ron input[type=number]{width:100%;min-width:0;background:transparent;border:0;padding:0;font-size:clamp(4.5rem,11vw,8rem);font-weight:700;line-height:1;text-align:center;font-variant-numeric:tabular-nums}
+.cfg .c-ron span.t{font-size:clamp(1.2rem,2.4vw,1.8rem);font-weight:700;color:var(--c);margin:0 0 4px}
+.cfg .c-ron input[type=number]{width:100%;min-width:0;background:transparent;border:0;padding:0;font-size:clamp(3rem,6vw,4.5rem);font-weight:700;line-height:1;text-align:center;font-variant-numeric:tabular-nums}
 input[type=number],select{background:#0e1014;border:1px solid var(--line);border-radius:10px;padding:9px 8px;outline:none}
 input[type=number]{width:62px;text-align:center;-moz-appearance:textfield;appearance:textfield}
 input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
@@ -108,12 +103,14 @@ textarea::placeholder{color:var(--dim)}
         </div>
         <select id="tz"></select>
         <small id="clock"></small></div>
-      <div class="c-trab"><span class="t">Trabajo</span>
-        <div class="row"><input type="number" id="wh"> <label>h</label>
-        <input type="number" id="wm"> <label>min</label></div></div>
-      <div class="c-desc"><span class="t">Descanso</span>
-        <div class="row"><input type="number" id="rh"> <label>h</label>
-        <input type="number" id="rm"> <label>min</label></div></div>
+      <div class="c-td">
+        <div class="sub"><span class="t">Trabajo</span>
+          <div class="row"><input type="number" id="wh"> <label>h</label>
+          <input type="number" id="wm"> <label>min</label></div></div>
+        <div class="sub"><span class="t">Descanso</span>
+          <div class="row"><input type="number" id="rh"> <label>h</label>
+          <input type="number" id="rm"> <label>min</label></div></div>
+      </div>
       <div class="c-ron"><span class="t">Rondas</span>
         <input type="number" id="rd"></div>
     </div>
@@ -160,14 +157,15 @@ const def={hue:180,gamer:false,wh:0,wm:50,rh:0,rm:10,rounds:1,tz:'America/Lima',
 const old=Object.assign({},store.get('pomo2',{}),store.get('pomo3',{}));
 delete old.rounds;delete old.sync;
 let st=Object.assign({},def,old,store.get('pomo4',{}));
-if(st.th===null)st.th=(nowIn(st.tz)[0]+1)%24;
+function nextHour(){st.th=(nowIn(st.tz)[0]+1)%24;st.tm=0;st.ts=0}
+nextHour();
 st.th=Math.min(23,st.th);st.wh=Math.min(23,st.wh);st.rh=Math.min(23,st.rh);
 st.rounds=Math.max(1,Math.min(100,st.rounds||1));
 let goals=store.get('goals2',[{text:'',done:false}]);
 if(!goals.length)goals=[{text:'',done:false}];
 let tot=store.get('tot2',0);
 $('notes').value=store.get('notes2','');
-let mode='w',running=false,waiting=false,end=0,waitEnd=0,left=0,tick=null,gt=null,lastT=0,round=1,msg='';
+let userEdited=false,mode='w',running=false,waiting=false,end=0,waitEnd=0,left=0,tick=null,gt=null,lastT=0,round=1,msg='';
 function save(){store.set('pomo4',st)}
 
 /* ---------- Colores (0, 45, 90 … 315) ---------- */
@@ -234,7 +232,7 @@ function finish(){
 }
 function loop(){
   if(waiting){
-    if(waitEnd-Date.now()<=0)begin();else draw();
+    if(waitEnd-Date.now()<=0){userEdited=false;begin()}else draw();
     return;
   }
   account();
@@ -289,10 +287,17 @@ $('tz').onchange=()=>{st.tz=$('tz').value;save();clock();draw()};
   el.onkeydown=e=>{if(['e','E','+','-','.',',','ArrowUp','ArrowDown'].includes(e.key))e.preventDefault()};
   el.addEventListener('wheel',e=>e.preventDefault(),{passive:false});
   el.oninput=()=>{if(el.value!==''&&+el.value>b)el.value=b};
-  el.onchange=()=>{st[k]=clamp(parseInt(el.value),a,b);el.value=st[k];save();
+  el.onchange=()=>{if(['th','tm','ts'].includes(id))userEdited=true;st[k]=clamp(parseInt(el.value),a,b);el.value=st[k];save();
     if(!running&&!waiting){left=total(mode)}draw()}
 });
-function clock(){const [h,m,s]=nowIn(st.tz);$('clock').textContent=`Hora ahora en ${tzName()}: ${pad(h)}:${pad(m)}:${pad(s)}`}
+function clock(){
+  const [h,m,s]=nowIn(st.tz);
+  $('clock').textContent=`Hora ahora en ${tzName()}: ${pad(h)}:${pad(m)}:${pad(s)}`;
+  if(!userEdited&&!waiting){
+    const nh=(h+1)%24;
+    if(st.th!==nh||st.tm||st.ts){st.th=nh;st.tm=0;st.ts=0;$('th').value=nh;$('tm').value=0;$('ts').value=0}
+  }
+}
 setInterval(clock,1000);
 
 /* ---------- Metas ---------- */
