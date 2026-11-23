@@ -1,1261 +1,315 @@
 <!DOCTYPE html>
-<!--
-NOTAS DEL ARCHIVO (todas las notas van aquí arriba)
-
-1. MARCA: "Hogar Hogareña". Sitio de una inmobiliaria con listado de propiedades en Lima.
-   Contacto: cada anuncio usa el WhatsApp que escribió quien lo publicó en el formulario. En el código no hay ningún número fijo; si un anuncio no trae número, su tarjeta no muestra el botón de WhatsApp.
-
-2. COLORES (solo 3, en todo el sitio):
-   - Color 1: negro  #1a1a1a  hsl(0, 0%, 10%)    -> fondo y textos sobre verde
-   - Color 2: verde  #14eb4a  hsl(135, 84%, 50%) -> acentos, botones, bordes activos
-   - Color 3: blanco #e8fded  hsl(135, 84%, 95%) -> textos y contornos
-   Los grises/transparencias son el blanco o el verde con opacidad (rgba), no colores nuevos.
-   Estilo: modo oscuro.
-
-3. DISEÑO (basado en la captura de referencia):
-   - Barra de filtros: Ubicación, Alquilar/Comprar, Departamento (antes "Inmueble"), Precio y Más filtros.
-     Los 5 tienen el mismo tamaño y forma squircle, con su ícono pegado a la derecha.
-   - Filtros desplegables (Alquilar/Comprar, Departamento, Precio, Más filtros): al hacer clic se abre debajo
-     un squircle solo con las opciones (sin título), el ∨ pasa a ∧ y al elegir se cierra. Más filtros tiene solo
-     "Sin filtros" y cuatro casillas numéricas (Superficie, Dormitorios, Baños, Estacionamientos); queda abierto mientras se escribe. Al seleccionar un filtro solo cambia el color del borde
-     (no hay segundo contorno). Se maneja también con teclado (flechas y Esc).
-   - Precio: al abrirlo sale "Cualquier precio" y debajo la moneda (USD primero, Soles a la derecha; por defecto Soles). USD = dólar de Estados Unidos, Soles = sol peruano (PEN). Al cambiar de moneda cambian también todos los precios de la página (tarjetas y mapa) y el rango se convierte con el tipo de cambio TC
-     y dos casillas Desde / Hasta. Solo aceptan números. "Cualquier precio" sigue elegido hasta que se escribe un monto y se pulsa "Ver resultados" (el rango no filtra antes). Al hacer clic en una casilla desaparece su texto guía y su
-     borde pasa a color 3 (blanco). Si la propiedad está en otra moneda se convierte con el tipo de cambio TC (en el JavaScript).
-   - Debajo: cantidad de resultados, botón "Ordenar" y la lista de propiedades.
-   - "Ordenar" es un desplegable del mismo estilo que los filtros, con 2 opciones: Menor precio y Mayor precio.
-     El texto del botón siempre dice "Ordenar" (no cambia). Por defecto está elegido Mayor precio.
-   - Mapa a la derecha: ocupa el alto de la pantalla desde que se abre la página y se queda arriba (no es sticky: no sigue al bajar por la lista).
-   - Más filtros: casillas solo con números; 0 es el valor por defecto y significa sin filtro. Con un número se ve 3+ (en Superficie, 60 m² +). Filtra al instante y "Sin filtros" lo vuelve todo a 0. El panel tiene el mismo tamaño que el de Precio.
-   - Tarjetas: los datos terminan en punto (m² tot., dorm., baño., estac.). Lo que vale 0 no se muestra.
-   - Al pulsar Ver mapa, Ver listado o el logo, la página sube arriba del todo.
-   - Separación entre sqcircles: una sola medida, la variable CSS llamada sep en :root (20px). La usan los filtros, la tarjeta de arriba, la barra Ordenar, las tarjetas de la lista y el mapa. Para cambiarla en todo el sitio, se cambia solo ese valor.
-   - Línea de la cabecera: el mismo gris de los bordes (blanco al 20%). Las tarjetas ya NO llevan botón de llamada: solo WhatsApp (verde).
-   - Tarjeta de arriba (#sel): muestra la propiedad del mapa. Cambia con solo pasar el mouse por un precio
-     (o tocarlo), sin necesidad de seleccionarlo; la última queda elegida (pin verde) hasta pasar por otro.
-     La página nunca se desplaza por esto: el contenedor conserva su alto para que lo de abajo no se mueva.
-     Las tarjetas de abajo (#list) son todo lo que se publica; la de arriba solo es una vista de la elegida.
-     Al abrir la página muestra la primera de la lista. Si la elegida queda fuera por los filtros, pasa a
-     mostrar la primera que quede.
-   - Al pasar el mouse por una tarjeta de abajo se resalta su pin en el mapa.
-   - Se quitaron: el botón "Crear alerta", la franja verde de la foto (ej. "Entrega inmediata")
-     y la etiqueta "Destacado".
-
-4. MAPA REAL: usa Leaflet (cdnjs) con el mapa estándar de OpenStreetMap (el de colores normales, con calles y nombres; sin clave de API). Es un mapa de todo el mundo, pero con límite: un solo mundo (no se repite ni se sale de los bordes; maxBounds y minZoom se calcula según el tamaño del mapa).
-   Vista inicial: Latinoamérica (LATAM). Los precios del mapa se agrupan en círculos con el número de propiedades (clic = acercar).
-   Ubicaciones: lista fija País, Estado, Capital con sugerencias al escribir; al elegir una, el mapa va allí y la lista muestra solo lo que hay en esa zona
-   (borrar el texto quita la zona). Todos los detalles están en la nota 14.
-   "Ver mapa" (abajo del mapa) abre el mapa a todo el ancho con los precios donde está cada propiedad; "Ver listado" vuelve.
-   Más filtros: "Sin filtros" va arriba y está marcado por defecto.
-   Tarjeta única del mapa (al abrir Ver mapa): mitad imagen y mitad información, sin barra de desplazamiento y sin el texto "Seleccionado en el mapa"; el corazón va arriba a la derecha de la información y, en pantalla ancha, la tarjeta ocupa su propio espacio a la izquierda y el mapa empieza a su derecha (no queda debajo de ella); los botones + y − van abajo a la derecha, encima del texto de OpenStreetMap, con fondo negro y los signos en color 2 (verde); miden 44 px y su centro queda alineado con el de la flecha → de la barra "Ver mapa / Ver listado". El texto "Leaflet | © OpenStreetMap" también va en color 2. Siempre se ven igual: no cambian al pasar el mouse, pulsarlos ni al llegar al límite del zoom.
-   Necesita internet para cargar el mapa.
-   Cada propiedad lleva sus coordenadas `lat` y `lng`; de ahí salen los pines con precio.
-   El mapa de OpenStreetMap es gratis para uso liviano (reglas: operations.osmfoundation.org/policies/tiles); si la web tiene mucho tráfico conviene cambiar de proveedor.
-   El estilo claro de CARTO (Voyager) que se probó pide clave de API y salía con marca de agua "API KEY REQUIRED"; por eso no se usa.
-   Se puede mirar todo el mundo en el mapa, pero PUBLICAR solo se permite en los 22 países de la nota 14 (ver nota 15).
-
-5. PROPIEDADES: están en la lista `props` del JavaScript final. Los datos son de ejemplo; reemplázalos por los reales.
-   Cada una usa su imagen (depto1.webp, casa1.webp, terreno1.webp, etc.). Sin imagen se ve un recuadro de aviso.
-   Los filtros funcionan con esos datos (tipo, alquiler/venta, precio máximo y ubicación).
-   Más filtros solo usa superficie (m2), dorm, ban y est (estacionamientos); el est de cada propiedad es de ejemplo, reemplázalo por el real.
-
-6. SECCIONES ANTERIORES: la versión anterior tenía 3 secciones (captar propietarios, conseguir
-   compradores, conseguir inquilinos) dentro de una página de venta. Esta versión las reemplaza
-   por el listado de propiedades.
-
-7. TIPO DE CAMBIO (soles por dólar): línea 515, `const TC`. REDONDEO (a dólares hacia arriba, a soles hacia abajo; los 2 en la misma función): línea 516, `const redondear`; lo usan los precios y el rango de Precio.
-
-8. MONEDA POR DEFECTO (por ahora Soles): línea 550, `const estado`, campo `mon:'PEN'`. Es el que manda: 'PEN' = Soles, 'USD' = dólares. Para cambiar el default, cambia solo ese valor.
-   Además, en el HTML del panel Precio (líneas 399 y 400) el botón con `aria-selected="true"` solo marca la opción inicial; muévelo al botón de la moneda que quede por defecto (USD línea 399, Soles línea 400).
-9. PUBLICAR (Supabase): el botón "Publicar" de la cabecera abre un formulario. Las fotos van a Supabase Storage (bucket "fotos") y los datos a la tabla
-   "propiedades" con estado "pendiente"; la página solo muestra las que tienen estado "aprobada" (las cargas al abrir, junto a las de ejemplo de `props`).
-   Para aprobar: Supabase > Table Editor > propiedades > cambia estado a "aprobada" (o "rechazada"). El contacto del anuncio es el WhatsApp que escribió quien publica.
-   Conexión: pega la dirección del proyecto en `SB_URL` y la clave pública en `SB_KEY` (línea 526, cerca del inicio del JavaScript). Antes, corre supabase-completo.sql en el SQL Editor.
-   Sin esas dos constantes el sitio funciona igual con los datos de ejemplo y el formulario avisa que falta conectar.
-   La dirección se ubica con Nominatim (OpenStreetMap); si no la encuentra, usa el centro de la zona (revisa lat/lng en la tabla al aprobar).
-   Los textos de los anuncios se escapan antes de mostrarse (esc), así nadie puede inyectar código desde el formulario.
-10. EJEMPLOS, PROYECTOS Y GALERÍA: todas las propiedades de ejemplo dicen solo "Ejemplo" en su descripción y usan precios redondos en soles (100, 1,000, 10,000, 100,000 y 1,000,000).
-   Quedan 2 departamentos en alquiler y 1 en venta, más una tarjeta de Proyecto por cada tipo que puede serlo (Departamento, Casa, Terreno y Oficina; lista `PROY` en el JavaScript).
-   Cada tarjeta tiene 3 fotos con flechas < > y 3 puntos. La primera es `img`; las otras dos se buscan solas con -2 y -3 en el nombre (depto1.webp, depto1-2.webp, depto1-3.webp)
-   en la misma carpeta; si falta alguna se ve el recuadro de aviso con el nombre del archivo que falta. Los anuncios que llegan de Supabase usan las 3 fotos que subió quien publica.
-   Formulario Publicar: 3 operaciones (En alquiler, En venta, Proyecto; con Proyecto el tipo solo ofrece los 4 permitidos), el monto se separa con comas cada 3 dígitos (1,000),
-   y el teléfono tiene selector con todos los países de América en orden alfabético (Perú +51 por defecto). Supabase acepta Proyecto con supabase-completo.sql.
-11. TECLA 1: pone la página en pantalla completa (modo F11) y, al pulsarla otra vez, sale (Esc también sale). No hace nada si hay un desplegable abierto (Alquilar, Departamento, Precio, Más filtros, Ordenar),
-   si están las sugerencias de Ubicación, si la ventana Publicar está abierta o si se está escribiendo en una casilla. El código está al final del JavaScript.
-12. SUPABASE: supabase-completo.sql crea y deja todo listo (tabla, reglas de seguridad y bucket "fotos" de 500 KB por archivo, solo JPG) y se puede correr varias veces.
-13. ANTIBOT: el formulario envía todo a la función "publicar" (funcion-publicar.ts), que verifica Turnstile (Cloudflare) y guarda las fotos y el anuncio. Pasos: pegar la Site Key en TS_SITEKEY, crear la función en Supabase con el secreto TURNSTILE_SECRET_KEY y, cuando ya funcione, correr supabase-cerrar-escritura.sql para que nadie pueda escribir directo. La página ya reduce cada foto a menos de 500 KB antes de subirla.
-14. UBICACIONES (casilla de búsqueda "País, Estado, Ciudad"):
-   - El texto gris "País, Estado, Ciudad" es solo de ejemplo: desaparece al escribir la primera letra.
-   - La lista es FIJA y está en el JavaScript (constante `DATOS`, en el bloque "Ubicaciones"). Las sugerencias no usan internet: salen al instante.
-   - Cada opción es siempre "País, Estado, Capital del estado" (ej.: Perú, Junín, Huancayo). Nunca sale solo el país ni "País, Estado".
-   - Lo que se escribe se compara con el INICIO de esa frase (sin importar tildes ni mayúsculas). Si escribes un país, solo salen opciones de ese país.
-     Escribir "Huancayo" solo no encuentra nada: hay que empezar por el país (Perú, Junín, Huancayo). También sirve "perú,junín".
-   - Orden alfabético por país, luego estado, luego capital. Máximo 5 opciones (constante `MAX`). Sin barra de desplazamiento; la lista mide lo mismo que la casilla.
-   - PAÍSES INCLUIDOS (22): United States, Canada, México, Belice, Guatemala, Honduras, El Salvador, Nicaragua, Costa Rica, Panamá, Puerto Rico,
-     República Dominicana, Argentina, Bolivia, Brasil, Chile, Colombia, Ecuador, Paraguay, Perú, Uruguay y Venezuela.
-   - NO ESTÁN, a propósito: Guyana, Surinam, Guayana Francesa y las islas del Caribe, salvo Puerto Rico y República Dominicana
-     (Cuba, Haití, Jamaica, Bahamas, Barbados, Trinidad y Tobago, Antigua y Barbuda, Dominica, Granada, San Cristóbal y Nieves, Santa Lucía, San Vicente,
-     Curazao, Aruba, Guadalupe y Martinica). Belice sí está porque es de Centroamérica (continente).
-   - IDIOMA: todo en español, salvo los países donde el inglés es lengua nativa (United States, Canada y Belize), que se muestran en inglés con sus estados
-     en inglés. Esos tres también se encuentran escribiendo en español (Estados Unidos, Canadá, Belice) gracias a `ALIAS`.
-   - PERÚ lleva TODAS las capitales de provincia de sus 25 departamentos (196; ej.: Junín = Huancayo, Concepción, La Merced, Jauja, Junín, Satipo, Tarma, La Oroya, Chupaca).
-     Los demás países llevan solo la capital de cada estado (una por estado). Pendiente: darles también las capitales de provincia/condado.
-   - La lista fue escrita de memoria (618 combinaciones): si algo sale mal escrito o falta, se corrige en `DATOS`.
-     Para agregar un país hay que tocar 3 cosas: `DATOS` (estados y capitales), `PAIS` (nombre que se muestra) y `CAJA` (zona del país [sur, oeste, norte, este]);
-     y `ALIAS` solo si es de habla inglesa. Para quitar un país, se borra de esas mismas constantes.
-   - AL ELEGIR una opción: el mapa va a esa capital y la lista de propiedades se filtra a esa zona. La ubicación exacta se pide a Photon (OpenStreetMap, sin clave);
-     si no responde en 4 segundos, el mapa queda en el país. Borrar el texto quita la zona.
-   - El formulario Publicar no usa los estados ni las capitales, pero sí la lista de países (nota 15).
-15. PUBLICAR SOLO EN LOS PAÍSES ELEGIDOS: el mapa es de todo el mundo, pero el formulario Publicar solo deja enviar si la dirección queda en uno de los 22 países de la nota 14
-   (como en Urbania, que solo deja publicar en Perú). Al enviar, la dirección se ubica con Nominatim (`addressdetails=1`) y se revisa su país contra `HH_PAISES`
-   (se arma solo con las claves de `DATOS`). Si no coincide, avisa con la lista de países permitidos y no envía nada.
-   Esta revisión está solo en la página: para que un robot tampoco pueda saltársela, la función "publicar" de Supabase (funcion-publicar.ts) debería revisar el país de lat/lng igual.
-   Mientras tanto, nada se muestra sin que lo apruebes tú (estado "aprobada").
-16. CONTORNO DE LA CAPITAL: al elegir una opción de Ubicación, además de ir allí, el mapa dibuja el borde de esa capital (línea color 2 y relleno muy suave). El límite se pide a Nominatim (OpenStreetMap, `polygon_geojson`) en la función `limite`; al llegar, el mapa se encuadra a ese borde y la lista se filtra por su área. Si Nominatim no responde en 6 segundos o solo devuelve un punto, no se dibuja nada y todo sigue como antes. Borrar el texto de Ubicación quita el borde.
-   PINES Y GRUPOS DEL MAPA: fondo color 2 y texto color 1. Al elegir un pin (o pasar el mouse por un pin o un círculo de grupo) el fondo sigue en color 2 y el texto pasa a color 3.
-17. TARJETA VACÍA EN VER MAPA: en pantalla ancha, al abrir Ver mapa la tarjeta de la izquierda siempre ocupa su espacio (el mapa empieza a su derecha). Si no hay propiedades (por la zona o los filtros) queda vacía: fondo color 1 y solo el aviso "No hay propiedades con estos filtros." centrado. En celular, donde la tarjeta taparía el mapa, no se muestra cuando está vacía.
-18. ESTADOS UNIDOS COMO "US": tanto en la lista de sugerencias como en la casilla al elegir, Estados Unidos aparece como "US, Estado, Capital" (el texto sale de `label` en `FILAS`). Se encuentra escribiendo US, United States o Estados Unidos; para el orden alfabético se sigue usando "United States" (`ord`), así que escribir "U" muestra primero sus opciones.
-19. (REEMPLAZADA POR LA NOTA 20: ya no hay autocompletado ni casilla de dirección) DIRECCIÓN EXACTA AL PUBLICAR: en el formulario, Dirección tiene autocompletado (Photon, OpenStreetMap; no Nominatim, que prohíbe autocompletar). Salen hasta 5 lugares reales de los 22 países (calles, edificios, locales; no ciudades ni distritos) y solo se puede enviar eligiendo uno. Ver la nota 20 para Zona, Dirección y el punto que se guarda. Esto reemplaza lo que decían las notas 9 y 15 sobre ubicar con Nominatim al enviar (ya no se usa: no hay "centro de la zona" como plan B). Photon público tiene límites de uso; con mucho tráfico conviene un proveedor con clave. La revisión del país en el servidor está en revision-pais-funcion-publicar.ts (hay que pegarla en la función "publicar" de Supabase). (Actualizado en la nota 20.)
-20. UBICACIÓN Y MAPA AL PUBLICAR: la casilla se llama Ubicación (antes Zona) y va primero; usa el mismo buscador de Ubicación (País, Estado, Ciudad; se comparte con `window.HH_UB`). Al elegirla, el teléfono cambia solo al código de ese país (mapa `NOMTEL`; la persona todavía puede cambiarlo) y el mapa (el mismo de la página, sin propiedades) se ve siempre: sin ubicación elegida muestra solo el aviso "No hay propiedades con estos filtros."; al elegirla se encuadra en ella y dibuja su borde. No hay casilla de Dirección: la persona toca en el mapa el lugar de su propiedad, y solo se acepta dentro de la ubicación elegida (su borde si Nominatim lo dio; si no, su caja). Ese punto es el que se guarda (lat/lng). El texto `dir` del anuncio se saca al enviar de la calle más cercana a ese punto (`nombreDe`, Nominatim reverse); si no responde en 5 s queda "Ubicación marcada en el mapa, <ciudad>". En la tabla, `zona` guarda el texto elegido (ej.: Perú, Junín, Huancayo).
--->
 <html lang="es">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Hogar Hogareña</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg viewBox=%220 0 360 290%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cg fill=%22none%22 stroke=%22%2314eb4a%22 stroke-width=%229%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath stroke-width=%2217%22 d=%22M16 112 162 20 312 112%22/%3E%3Cpath d=%22M56 124V261H240M274 124V215%22/%3E%3Crect x=%2270%22 y=%22136%22 width=%2288%22 height=%2282%22/%3E%3Cpath d=%22M114 136V218M70 177H158%22/%3E%3Cpath d=%22M190 261V136H254V261%22/%3E%3C/g%3E%3Cpath fill=%22%2314eb4a%22 d=%22M236 276C228 270 230 258 240 254C238 244 248 234 260 236C262 218 270 206 288 206C304 206 312 218 310 230C324 226 338 236 336 248C348 252 350 268 340 274C336 278 332 278 326 278Z%22/%3E%3C/svg%3E">
-<meta name="color-scheme" content="dark">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+<title>Mi Pomodoro</title>
 <style>
-:root{
-  --sep:20px; /* separación única entre sqcircles (filtros, tarjetas, mapa, Ordenar) */
-  --negro:#1a1a1a; --verde:#14eb4a; --blanco:#e8fded;
-  --linea:rgba(232,253,237,.2); --suave:rgba(232,253,237,.66); --verde-t:rgba(20,235,74,.14);
-  --display:'Bricolage Grotesque',system-ui,sans-serif; --body:'Instrument Sans',system-ui,sans-serif;
-  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
-}
-html{scroll-behavior:smooth;scrollbar-gutter:stable} /* reserva siempre el lugar de la barra: al ir a Ver mapa (sin barra) nada se mueve a los lados */
-*,*::before,*::after{box-sizing:inherit}
-body{margin:0;background:var(--negro);color:var(--blanco);font:400 16px/1.5 var(--body);-webkit-font-smoothing:antialiased}
-a{color:inherit;text-decoration:none}
-button{font:inherit;color:inherit}
-:focus-visible{outline:2px solid var(--verde);outline-offset:3px}
-.wrap{width:calc((100% + min(1320px,100% - 48px)) / 2);margin-inline:auto} /* margen lateral = la mitad del anterior */
-
-/* cabecera */
-.top{border-bottom:1px solid var(--linea)} /* mismo gris de las demás líneas (bordes de filtros y tarjetas) */
-.top .wrap{padding-block:var(--sep);display:flex;align-items:center;justify-content:space-between;gap:var(--sep)} /* mismo espacio (sep) arriba y abajo del logo */
-.logo{display:flex;align-items:center;gap:14.4px;height:24.864px;font:800 28.8px/24.864px var(--display);letter-spacing:-.03em} /* x1.5 de icono y texto; el alto del contenedor (24.864px) NO cambia: lo que crece se desborda hacia arriba y abajo dentro del espacio (sep) de la cabecera, así la cabecera mide lo mismo */ /* x0.8; line-height = alto del ícono, así el espacio de arriba y abajo es exactamente sep */
-.logo svg{width:46.368px;height:37.296px;flex:none} /* 30.912 x 24.864 por 1.5 */ /* x1.2 del anterior (25.76 x 20.72) */
-
-/* filtros: Ubicación ocupa el espacio que sobra; los otros 4 miden lo mismo (0.8 del ancho que tenían), ícono a la derecha */
-.filters{position:relative;z-index:5;display:grid;grid-template-columns:minmax(0,1fr) repeat(4,calc(min(1272px,100% - 72px) * .16));gap:var(--sep);margin:var(--sep) 0 var(--sep)}
-.f{position:relative}
-.dd{position:relative}
-.dd.open{z-index:60}
-.sq{display:block;width:100%;height:36px;margin:0;padding:0 52px 0 20px;text-align:left;cursor:pointer;
-  background:var(--negro);color:var(--blanco);border:1px solid var(--linea);border-radius:20px;corner-shape:squircle;
-  font:600 16px var(--body);appearance:none;-webkit-appearance:none;transition:border-color .2s}
-/* al seleccionar solo cambia el color del borde, sin segundo contorno */
-.sq,.sq:focus,.sq:focus-visible{outline:none}
-.sq:hover,.sq:focus-visible,input.sq:focus,.dd.open .sq,.dd.open .ob{border-color:var(--verde)}
-.sq::placeholder{color:var(--suave);opacity:1}
-.sq .lbl{display:block;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-.f>svg{position:absolute;right:18px;top:50%;translate:0 -50%;width:20px;height:20px;pointer-events:none}
-.chev{transition:rotate .2s}
-.f.open .chev{rotate:180deg}
-/* lista de opciones: squircle debajo del filtro */
-.panel{position:absolute;top:calc(100% + 8px);left:0;z-index:60;min-width:100%;width:max-content;max-width:min(340px,calc(100vw - 48px));padding:8px;
-  display:grid;gap:2px;background:var(--negro);border:1px solid var(--linea);border-radius:22px;corner-shape:squircle;
-  box-shadow:0 24px 60px -20px rgba(0,0,0,.9);opacity:0;visibility:hidden;translate:0 -6px;transition:opacity .15s,translate .15s,visibility .15s}
-.dd.open .panel{opacity:1;visibility:visible;translate:0 0}
-.dd-orden .panel{left:auto;right:0;min-width:100%}
-.opt{display:flex;align-items:center;gap:14px;width:100%;padding:14px;border:0;border-radius:14px;corner-shape:squircle;background:none;
-  color:var(--blanco);font:500 16px var(--body);text-align:left;white-space:nowrap;cursor:pointer}
-.opt:hover,.opt:focus-visible{background:rgba(232,253,237,.08);outline:none}
-.radio,.check{flex:none;display:grid;place-items:center;width:24px;height:24px;border:2px solid var(--blanco)}
-.radio{border-radius:50%}
-.check{border-radius:50%}
-.opt[aria-selected="true"] .radio{border-color:var(--verde)}
-.opt[aria-selected="true"] .radio::after{content:"";width:12px;height:12px;border-radius:50%;background:var(--verde)}
-.opt[aria-selected="true"] .check{border-color:var(--verde)}
-.opt[aria-selected="true"] .check::after{content:"";width:12px;height:12px;border-radius:50%;background:var(--verde)}
-/* panel de Precio: moneda (USD / Soles) y casillas Desde / Hasta */
-#dd-precio .panel{min-width:280px;max-width:none;width:calc(200% + 12px)} /* llega hasta el borde derecho de Más filtros (2 columnas + el espacio entre ellas) */
-#dd-mas .panel{left:auto;right:0;min-width:280px;max-width:none;width:calc(200% + 12px)} /* mismo tamaño que el de Precio */
-#dd-precio .opt,#dd-precio .mo,#dd-mas .opt{gap:18px} /* más aire entre el círculo y el texto; "USD" queda alineado con "Cualquier precio" */
-#dd-tipo .panel{max-height:calc(100vh - 110px);overflow-y:auto;overscroll-behavior:contain} /* salen todos los tipos; solo en pantallas muy bajas aparece scroll */
-.mons{display:flex;gap:22px;padding:10px 14px 6px}
-.mo{display:flex;align-items:center;gap:14px;padding:0;border:0;background:none;color:var(--blanco);font:500 16px var(--body);cursor:pointer}
-.mo[aria-selected="true"] .radio{border-color:var(--verde)}
-.mo[aria-selected="true"] .radio::after{content:"";width:12px;height:12px;border-radius:50%;background:var(--verde)}
-.mfrow{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:6px 6px 6px 14px}
-.mfrow label{font:500 16px var(--body)}
-.nf{display:flex;align-items:center;gap:6px;width:124px;height:44px;padding:0 14px;background:var(--negro);border:1px solid var(--linea);border-radius:16px;corner-shape:squircle;cursor:text;transition:border-color .2s}
-.nf:focus-within{border-color:var(--blanco)}
-.nf input{min-width:1ch;width:1ch;padding:0;margin:0;border:0;background:none;color:var(--suave);font:500 16px var(--body);outline:none}
-.nf.on input,.nf:focus-within input{color:var(--blanco)}
-.nf .suf{display:none;font:500 16px var(--body);white-space:nowrap}
-.nf.on .suf{display:inline}
-.rango{display:flex;gap:10px;padding:6px 6px 8px}
-.num{flex:1 1 0;min-width:0;width:100%;height:52px;padding:0 14px;background:var(--negro);color:var(--blanco);border:1px solid var(--linea);
-  border-radius:16px;corner-shape:squircle;font:500 16px var(--body);appearance:none;-webkit-appearance:none;transition:border-color .2s}
-.ver{display:block;width:calc(100% - 12px);height:48px;margin:0 6px 6px;cursor:pointer;background:var(--negro);color:var(--blanco);border:1px solid var(--blanco);border-radius:14px;corner-shape:squircle;font:600 16px var(--body);transition:background .2s}
-.ver:hover,.ver:focus-visible{background:rgba(232,253,237,.08);outline:none}
-.num::placeholder{color:var(--suave);opacity:1}
-/* al hacer clic: el texto guía desaparece y el borde pasa a color 3 */
-.num:focus,.num:focus-visible{outline:none;border-color:var(--blanco)}
-.num:focus::placeholder{color:transparent}
-
-/* cuerpo */
-.layout{display:grid;grid-template-columns:minmax(0,1fr) calc(min(1272px,100% - 72px) * .32 + var(--sep));gap:var(--sep);align-items:start;padding-bottom:64px}
-.bar{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:var(--sep)}
-.bar h1{margin:0;font:600 20px/1.3 var(--body)}
-.bar .btns{display:flex;gap:var(--sep)}
-.ob{display:inline-flex;align-items:center;gap:10px;height:36px;padding:0 17px 0 20px;cursor:pointer;background:var(--negro);
-  border:1px solid var(--linea);border-radius:20px;corner-shape:squircle;font-weight:600;font-size:16px;transition:border-color .2s} /* misma letra y mismos márgenes laterales que los filtros (texto a 20px, ícono a 18px) */
-.ob:hover,.ob:focus-visible{border-color:var(--verde);outline:none}
-.ob svg{width:20px;height:20px}
-.list{display:grid;gap:var(--sep)}
-.card{position:relative;display:grid;grid-template-columns:minmax(0,42%) minmax(0,1fr);min-height:340px;overflow:hidden;
-  border:1px solid var(--linea);border-radius:28px;corner-shape:squircle;transition:border-color .2s}
-.card:hover,.card.on{border-color:var(--verde)}
-.card.on{box-shadow:0 0 0 1px var(--verde)}
-#sel{margin-bottom:var(--sep)}
-#sel[hidden]{display:none}
-.card.top{border-color:var(--verde);scroll-margin-top:20px}
-.card.cambia{animation:entra .3s ease}
-@keyframes entra{from{opacity:.4}to{opacity:1}}
-.prow{display:flex;align-items:center;flex-wrap:wrap;column-gap:18px;padding-right:44px} /* precio y, en la tarjeta de arriba, "Seleccionado en el mapa" a su derecha */
-.selnota{margin:0;color:var(--verde);font:800 20.4px/1.05 var(--display);letter-spacing:-.03em;white-space:nowrap} /* 0.6 del tamaño del precio, en una sola línea */
-.pic{position:relative;overflow:hidden;border-right:1px solid var(--linea)} /* línea vertical gris (la misma de los bordes) entre imagen y contenido */
-.pics{position:absolute;inset:0;display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain}
-.pics::-webkit-scrollbar{display:none}
-.sl{position:relative;flex:0 0 100%;scroll-snap-align:start}
-.sl img,.sl .ph{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.pn{position:absolute;top:50%;translate:0 -50%;z-index:2;display:grid;place-items:center;width:36px;height:36px;padding:0;border:1px solid var(--linea);border-radius:50%;background:rgba(26,26,26,.72);color:var(--blanco);cursor:pointer}
-.pn.prev{left:12px}.pn.next{right:12px}
-/* las flechas < > son color 3 y no cambian al pasar el mouse ni al pulsarlas (siguen funcionando igual) */
-.pn svg{width:18px;height:18px}
-.dots{position:absolute;left:50%;bottom:12px;translate:-50% 0;z-index:2;display:flex;gap:10px;padding:7px 11px;border-radius:999px;background:rgba(26,26,26,.62)}
-.dot{position:relative;width:8px;height:8px;padding:0;border:0;border-radius:50%;background:rgba(232,253,237,.55);cursor:pointer;transition:background .2s,scale .2s}
-.dot::before{content:"";position:absolute;inset:-7px}
-.dot[aria-current="true"]{background:var(--blanco);scale:1.25}
-.ph{display:grid;place-items:center;background:var(--negro)}
-.ph span{padding:8px 14px;border:1px dashed var(--suave);border-radius:999px;font-size:13px;color:var(--suave)}
-.body{display:flex;flex-direction:column;gap:6px;min-width:0;padding:18px 22px}
-.eyebrow{margin:0;color:var(--suave);font-size:14px}
-.price{margin:0;font:800 34px/1.05 var(--display);letter-spacing:-.03em}
-.spec{display:flex;gap:20px;flex-wrap:wrap;margin:4px 0 0;font-weight:500}
-.addr{margin:4px 0 0;font-weight:700}
-.zona{margin:0;color:var(--suave)}
-.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
-.chips span{padding:2px 12px;border:1px solid var(--linea);border-radius:8px;font-size:13px}
-.desc{margin:4px 0 0;color:var(--suave);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.foot{display:flex;align-items:center;justify-content:flex-end;gap:12px;flex-wrap:wrap;margin-top:auto;padding-top:12px;border-top:1px solid var(--linea)}
-.acts{display:flex;gap:10px}
-.wa{height:46px;border-radius:16px;corner-shape:squircle}
-.wa{display:inline-flex;align-items:center;gap:10px;padding:0 20px;background:var(--verde);color:var(--negro);font-weight:700}
-.wa svg{width:22px;height:22px}
-.heart{position:absolute;top:18px;right:20px;display:grid;place-items:center;width:36px;height:36px;padding:0;background:none;border:0;cursor:pointer}
-.heart svg{width:28px;height:28px;fill:none;stroke:var(--blanco);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.heart[aria-pressed="true"] svg{fill:var(--verde);stroke:var(--verde)}
-.vacio{padding:48px 24px;text-align:center;border:1px dashed var(--linea);border-radius:28px;corner-shape:squircle;color:var(--suave)}
-.vacio a{color:var(--verde);font-weight:600}
-
-/* mapa real, alto y pegado */
-.map{position:relative;isolation:isolate;display:flex;flex-direction:column;height:calc(100vh - 190px);min-height:360px;overflow:hidden;
-  border:1px solid var(--linea);border-radius:28px;corner-shape:squircle}
-.canvas{position:relative;flex:1;min-height:0;background:var(--negro)}
-#mapa{position:absolute;inset:0;background:#e9e7e1;font-family:var(--body)}
-#ubi+svg{pointer-events:auto;cursor:pointer}
-.sug{position:absolute;top:calc(100% + 8px);left:0;z-index:60;width:100%;box-sizing:border-box;padding:8px;display:grid;gap:2px;background:var(--negro);
-  border:1px solid var(--linea);border-radius:22px;corner-shape:squircle;box-shadow:0 24px 60px -20px rgba(0,0,0,.9)}
-.sug[hidden]{display:none}
-.sug .opt{white-space:normal;text-align:left;line-height:1.3}
-.sug .cab{margin:0;padding:10px 14px 6px;color:var(--suave);font:600 13px var(--body)}
-.sug .opt{display:block;font-weight:400}
-.sug .opt strong{font-weight:800}
-.sug .opt.on{background:rgba(232,253,237,.08)}
-.sug .msg{margin:0;padding:14px;color:var(--suave);font:500 15px var(--body)}
-/* pantalla ancha, vista inicial: se ven justo 2 tarjetas (la de arriba + la primera de la lista) y su borde de abajo queda a sep del fondo de la pantalla;
-   el mapa termina en esa misma línea.
-   arriba de las tarjetas: cabecera (2*sep + 24.864 + 1) + filtros (2*sep + 36) = 4*sep + 61.864
-   2 tarjetas + barra Ordenar (36, igual que los filtros) + 3*sep (entre tarjeta y barra, barra y tarjeta, y el de abajo) = 100vh - 4*sep - 61.864
-   => alto de tarjeta = (100vh - 7*sep - 97.864) / 2 ; alto del mapa = 100vh - 5*sep - 61.864 */
-@media(min-width:1001px){
-  /* Ordenar empieza donde empieza el filtro Departamento y llega hasta el borde derecho de las tarjetas: mismo ancho que una columna de filtros */
-  main.wrap{container-type:inline-size}
-  .dd-orden{width:calc(min(1272px, 100cqw - 72px) * .16)}
-  .dd-orden .ob{width:100%;justify-content:space-between}
-  .card{min-height:calc((100vh - 7 * var(--sep) - 97.864px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)) / 2);min-height:calc((100dvh - 7 * var(--sep) - 97.864px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)) / 2)}
-  .map{height:calc(100vh - 5 * var(--sep) - 61.864px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));height:calc(100dvh - 5 * var(--sep) - 61.864px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));min-height:360px}
-}
-/* mapa a todo el ancho (Ver mapa) */
-button.vm{width:100%;background:none;border:0;border-top:1px solid var(--linea);color:var(--verde);font:700 16px var(--body);cursor:pointer;text-align:left}
-.layout.mg{grid-template-columns:1fr}
-html.mg-on,html.mg-on body{overflow:hidden} /* Ver mapa: sin barra de desplazamiento (el lugar de la barra sigue reservado por scrollbar-gutter, así nada se mueve) */
-.layout.mg>section{display:none}
-.layout.mg .map{position:relative;top:0;height:calc(100vh - 190px);min-height:360px;scroll-margin-top:20px}
-/* Ver mapa en pantalla ancha: el mapa llena el alto que queda hasta abajo, dejando sep debajo, y la página no necesita barra de desplazamiento.
-   alto = pantalla - (cabecera: sep + 24.864 + sep + 1 de línea) - (filtros: sep + 36 + sep) - sep de abajo = 100vh - 5*sep - 62px */
-@media(min-width:1001px){
-  .layout.mg{padding-bottom:var(--sep)}
-  .layout.mg .map{height:calc(100vh - 5 * var(--sep) - 61.864px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));height:calc(100dvh - 5 * var(--sep) - 61.864px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))}
-}
-.mcard{position:absolute;left:0;top:0;bottom:0;z-index:900;width:min(380px,100%);height:100%;display:flex;flex-direction:column} /* pegada a los bordes del contenedor: ocupa todo su espacio */
-.mcard[hidden]{display:none}
-@media(max-width:700px){.mcard.vacia{display:none}} /* en celular la tarjeta tapa el mapa: si está vacía no se muestra */
-/* pantalla ancha: la tarjeta tiene su propio espacio a la izquierda y el mapa empieza a su derecha (nada queda tapado por la tarjeta) */
-@media(min-width:701px){.canvas:has(#mcard:not([hidden])) #mapa{left:min(380px,100%)}.mcard{border-right:1px solid var(--linea)}}
-/* tarjeta única: mitad imagen, mitad información (texto grande: crece con el alto de la pantalla y aprovecha todo el espacio de la mitad de abajo); el corazón arriba a la derecha de la información */
-.mcard .card{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;background:var(--negro)}
-.mcard .card.sin{align-items:center;justify-content:center;padding:24px;text-align:center;color:var(--suave);font:500 16px/1.4 var(--body)} /* tarjeta vacía: solo el aviso, centrado */
-.mcard .card,.mcard .card:hover,.mcard .card.top{border:0;border-radius:0;box-shadow:none} /* sin borde verde: la tarjeta llena el fondo (el redondeo lo da el contenedor del mapa) */
-.mcard .pic{flex:1 1 0;min-height:0;border-right:0;border-bottom:1px solid var(--linea)}
-.mcard .body{position:relative;flex:1 1 0;min-height:0;gap:4px;padding:14px 18px 16px;font-size:clamp(15px,2.4vh,20px);overflow:hidden}
-.mcard .heart{top:10px;right:12px;width:36px;height:36px}
-.mcard .heart svg{width:26px;height:26px}
-.mcard .prow{padding-right:44px}
-.mcard .price{font-size:clamp(28px,4.8vh,42px)}
-.mcard .spec{gap:4px 16px;margin:4px 0 0}
-.mcard .addr{margin:4px 0 0}
-.mcard .desc{white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;margin:4px 0 0;font-size:inherit;line-height:1.3}
-.mcard .foot{padding-top:12px}
-.mcard .wa{height:clamp(44px,6.2vh,56px);font-size:inherit}
-.mcard .wa svg{width:22px;height:22px}
-/* + / − abajo a la derecha, justo encima del texto "Leaflet | © OpenStreetMap"; fondo negro y signos en color 2 (verde) */
-.leaflet-bottom.leaflet-right .leaflet-control-zoom{margin:0 10px 6px 0}  /* 10px + mitad del botón (22px) = 32px: el mismo centro que la flecha → de la barra de abajo */
-.leaflet-control-zoom-in,.leaflet-control-zoom-out{font:700 28px/42px var(--body)!important;text-indent:0!important}
-/* círculo que agrupa varias propiedades cercanas */
-.grupo{position:absolute;left:0;top:0;translate:-50% -50%;min-width:36px;height:36px;padding:0 9px;box-sizing:border-box;border-radius:999px;display:flex;align-items:center;justify-content:center;
-  background:var(--verde);color:var(--negro);font:700 14px var(--body);cursor:pointer;box-shadow:0 0 0 5px rgba(20,235,74,.28),0 2px 6px rgba(0,0,0,.28);transition:background .2s}
-.grupo:hover{background:var(--verde);color:var(--blanco)}
-.pinwrap{background:none;border:0}
-/* etiqueta verde oscuro con el punto exacto debajo (el punto marca la ubicación real) */
-.pin{--pc:var(--verde);position:absolute;left:0;top:0;translate:-50% calc(-100% - 16px);transform-origin:50% calc(100% + 16px);padding:6px 12px;border-radius:8px;background:var(--pc);color:var(--negro);font:700 14px var(--body);white-space:nowrap;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.28);transition:background .2s,color .2s,scale .2s}
-.pin::after{content:"";position:absolute;left:50%;top:calc(100% + 8px);translate:-50% 0;width:16px;height:16px;box-sizing:border-box;border:3px solid var(--blanco);border-radius:50%;background:var(--pc);box-shadow:0 1px 4px rgba(0,0,0,.35);transition:background .2s}
-.pin.on,.pin:hover,.pin.sel{--pc:var(--verde);color:var(--blanco)}
-.pin.on,.pin:hover{scale:1.1}
-.leaflet-bar,.leaflet-bar a{border-color:var(--linea)!important}
-.leaflet-bar a,.leaflet-bar a:hover,.leaflet-bar a:focus,.leaflet-bar a:active,.leaflet-bar a.leaflet-disabled{background:var(--negro)!important;color:var(--verde)!important;opacity:1!important;box-shadow:none!important;outline:0!important;filter:none!important;-webkit-tap-highlight-color:transparent;width:44px!important;height:44px!important;line-height:42px!important}
-/* los + y − hacen su función pero NO cambian de aspecto al pasar el mouse, pulsarlos o llegar al límite del zoom */
-.leaflet-container .leaflet-control-attribution{background:var(--negro)!important;color:var(--verde)!important} /* fondo color 1 sólido, letra color 2 */
-.leaflet-container .leaflet-control-attribution,.leaflet-container .leaflet-control-attribution a,.leaflet-container .leaflet-control-attribution span{color:var(--verde)!important}
-.vm{display:flex;justify-content:space-between;align-items:center;padding:18px 22px;border-top:1px solid var(--linea);font-weight:700;transition:color .2s}
-.vm:hover,.vm:focus-visible,.vm:active{color:var(--blanco)} /* barra Ver mapa / Ver listado: texto y flecha en color 2; al seleccionarla (mouse encima, tecla o toque) pasan a color 3 */
-.vm svg{width:20px;height:20px}
-
-/* Publicar: botón de la cabecera y formulario (ventana modal) */
-.pub{display:inline-flex;align-items:center;gap:10px;height:36px;padding:0 18px 0 20px;cursor:pointer;border:0;border-radius:20px;corner-shape:squircle;background:var(--verde);color:var(--negro);font:700 16px var(--body)}
-.pub svg{width:18px;height:18px}
-.pub:hover{filter:brightness(1.08)}
-dialog#dlg{width:min(640px,calc(100vw - 32px));max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px);padding:0;margin:auto;overflow:auto;overscroll-behavior:contain;background:var(--negro);color:var(--blanco);border:1px solid var(--linea);border-radius:28px;corner-shape:squircle}
-dialog#dlg::backdrop{background:rgba(26,26,26,.82)}
-#pf{padding:24px;display:grid;gap:16px}
-.pf-h{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.pf-h h2{margin:0;font:800 24px/1.1 var(--display);letter-spacing:-.03em}
-.pf-x{display:grid;place-items:center;width:36px;height:36px;padding:0;background:none;border:1px solid var(--linea);border-radius:14px;corner-shape:squircle;cursor:pointer}
-.pf-x:hover{border-color:var(--verde)}
-.pf-x svg{width:18px;height:18px}
-.pf-nota{margin:0;color:var(--suave);font-size:14px}
-.pf-g{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.pf-g .full{grid-column:1/-1}
-.pf-l{display:grid;gap:6px;color:var(--suave);font:500 14px var(--body)}
-.pf-i{display:block;width:100%;height:44px;padding:0 14px;background:var(--negro);color:var(--blanco);border:1px solid var(--linea);border-radius:16px;corner-shape:squircle;font:500 16px var(--body);outline:none;appearance:none;-webkit-appearance:none;transition:border-color .2s}
-.pf-i:focus,.pf-i:hover{border-color:var(--blanco)}
-.pf-i::placeholder{color:var(--suave);opacity:1}
-select.pf-i{padding-right:34px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23e8fded' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;background-size:20px}
-textarea.pf-i{height:92px;padding:10px 14px;resize:vertical;font-family:var(--body)}
-.pf-seg{display:flex;gap:10px}
-.pf-seg label{position:relative;flex:1}
-.pf-seg input{position:absolute;inset:0;opacity:0;cursor:pointer;margin:0}
-.pf-seg span{display:grid;place-items:center;height:44px;border:1px solid var(--linea);border-radius:16px;corner-shape:squircle;font:600 16px var(--body);transition:border-color .2s,color .2s}
-.pf-seg input:checked+span{border-color:var(--verde);color:var(--verde)}
-.pf-seg input:focus-visible+span{outline:2px solid var(--verde);outline-offset:3px}
-.pf-precio{display:grid;grid-template-columns:1fr 120px;gap:10px}
-.pf-fotos{display:flex;flex-wrap:wrap;gap:12px}
-.pf-s{display:grid;gap:4px;justify-items:center;color:var(--suave);font:500 12px var(--body)}
-.pf-i[name="tel"]{word-spacing:.5em} /* más aire entre cada grupo de 3 dígitos del teléfono (el valor sigue con un solo espacio) */
-.pf-tel{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:10px}
-.pf-th{position:relative;width:96px;height:96px;border:1px solid var(--linea);border-radius:16px;corner-shape:squircle;overflow:hidden}
-.pf-th img{width:100%;height:100%;object-fit:cover;display:block}
-.pf-th button{position:absolute;top:4px;right:4px;display:grid;place-items:center;width:22px;height:22px;padding:0;border:0;border-radius:50%;background:var(--negro);color:var(--blanco);font:700 14px/1 var(--body);cursor:pointer}
-.pf-add{display:grid;place-items:center;width:96px;height:96px;padding:0;background:none;border:1px dashed var(--suave);border-radius:16px;corner-shape:squircle;color:var(--blanco);font:500 28px/1 var(--body);cursor:pointer}
-.pf-add:hover{border-color:var(--verde);color:var(--verde)}
-.pf-ac{position:relative}
-.pf-ac .sug{top:calc(100% + 6px);z-index:70}
-.pf-l[hidden]{display:none}
-.pf-i[readonly]{color:var(--suave);cursor:default}
-.pf-i[readonly]:hover,.pf-i[readonly]:focus{border-color:var(--linea)}
-.pf-i:disabled{opacity:.5;cursor:not-allowed}
-.pf-i:disabled:hover{border-color:var(--linea)}
-#pf-mapa{height:260px;border:1px solid var(--linea);border-radius:16px;corner-shape:squircle;overflow:hidden;isolation:isolate;cursor:crosshair}
-#pf-mapa .pin{cursor:default}
-.pf-mw{position:relative}
-#pf-mapa-vacio{position:absolute;inset:0;z-index:5;display:grid;place-items:center;padding:24px;text-align:center;background:var(--negro);border:1px solid var(--linea);border-radius:16px;corner-shape:squircle;color:var(--suave);font:500 16px/1.4 var(--body)} /* sin ubicación elegida: solo el aviso, centrado */
-#pf-mapa-vacio[hidden]{display:none}
-.pf-msg{min-height:1.5em;margin:0;color:var(--verde);font:600 14px var(--body)}
-.pf-send{display:block;width:100%;height:48px;cursor:pointer;border:0;border-radius:16px;corner-shape:squircle;background:var(--verde);color:var(--negro);font:700 16px var(--body)}
-.pf-send:disabled{opacity:.55;cursor:wait}
-.pf-trampa{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
-@media(max-width:520px){.pf-g{grid-template-columns:1fr}#pf{padding:18px}}
-
-@media(max-width:1000px){
-  .layout{grid-template-columns:1fr}
-  .map{order:-1;position:relative;top:0;height:340px;min-height:0}
-  .filters{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .filters .f:first-child{grid-column:1/-1}
-  .filters .f:nth-child(n+3):nth-child(odd) .panel{left:auto;right:0}
-  #dd-precio .panel{left:0;right:auto}
-}
-@media(max-width:640px){
-  .card{grid-template-columns:1fr;grid-template-rows:minmax(230px,1fr) auto} /* la foto absorbe todo el espacio libre; los datos quedan compactos, sin hueco antes del botón */
-  .pic{min-height:230px;border-right:0;border-bottom:1px solid var(--linea)}
-  .price{font-size:30px}
-}
-@media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}.card.cambia{animation:none}}
+:root{--h:180;--c:hsl(var(--h) 70% 85%);--bg:#0e1014;--card:#171a21;--line:rgba(255,255,255,.1);--dim:color-mix(in srgb,var(--c) 60%,transparent);
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--c);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh}
+main{max-width:640px;margin:0 auto;padding:24px 16px 60px}
+h1{font-size:1.1rem;font-weight:600;margin:6px 0 18px;letter-spacing:.04em}
+h2{font-size:.95rem;margin:0;font-weight:600}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;margin-bottom:18px}
+.head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.modes{display:flex;gap:8px;justify-content:center;margin-bottom:14px}
+.modes button{flex:1;max-width:160px}
+button,input,textarea,select{font:inherit;color:inherit}
+button{background:transparent;border:1px solid var(--dim);border-radius:12px;padding:9px 14px;cursor:pointer}
+button:hover{background:color-mix(in srgb,var(--c) 14%,transparent)}
+button.on{background:var(--c);color:#0e1014;border-color:var(--c);font-weight:600}
+.time{font-size:clamp(3rem,16vw,5.5rem);font-weight:700;text-align:center;font-variant-numeric:tabular-nums;letter-spacing:.02em;margin:8px 0 2px}
+.status{text-align:center;font-size:.85rem;color:var(--dim);margin-bottom:12px;min-height:1.2em}
+.bar{height:6px;border-radius:6px;background:var(--line);overflow:hidden;margin-bottom:16px}
+.bar i{display:block;height:100%;width:0;background:var(--c)}
+.ctrl{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;align-items:center}
+.seg{display:flex;border:1px solid var(--dim);border-radius:12px;overflow:hidden}
+.seg button{border:0;border-radius:0;padding:9px 12px}
+.cfg{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;margin-top:20px}
+.cfg>div{border:1px solid var(--line);border-radius:12px;padding:10px}
+.cfg span.t{display:block;font-size:.8rem;color:var(--dim);margin-bottom:6px}
+.cfg label,.cfg small{font-size:.85rem}
+.cfg small{display:block;color:var(--dim);margin-top:8px}
+input[type=number],select{background:#0e1014;border:1px solid var(--line);border-radius:8px;padding:7px 8px;outline:none}
+input[type=number]{width:56px}
+select{width:100%;margin-top:8px}
+input:focus,textarea:focus,select:focus{border-color:var(--c);outline:none}
+ul{list-style:none;margin:0;padding:0}
+li{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}
+li:last-child{border:0}
+li input[type=checkbox]{width:22px;height:22px;accent-color:var(--c);flex:none;cursor:pointer}
+li input.g{flex:1;min-width:0;background:transparent;border:0;border-bottom:1px solid transparent;padding:6px 2px}
+li input.g::placeholder{color:var(--dim)}
+li input.g:focus{border-bottom-color:var(--c)}
+li.done input.g{text-decoration:line-through;opacity:.45}
+li button{padding:2px 9px;border-radius:8px}
+textarea{width:100%;min-height:140px;resize:vertical;background:#0e1014;border:1px solid var(--line);border-radius:12px;padding:12px;line-height:1.5}
+textarea::placeholder{color:var(--dim)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;text-align:center;margin-top:12px}
+.stats div{border:1px solid var(--line);border-radius:12px;padding:14px 4px}
+.stats b{display:block;font-size:1.35rem}
+.stats small{color:var(--dim)}
+#pk{position:fixed;right:10px;top:calc(env(safe-area-inset-top,0px) + 10px);z-index:20;text-align:right}
+#pk>button{border-radius:50%;width:42px;height:42px;padding:0;background:var(--card);font-size:1.1rem}
+#pan{display:none;margin-top:8px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;width:190px}
+#pan.open{display:block}
+#gm{width:100%;margin-bottom:12px}
+.sw{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.sw i{aspect-ratio:1;border-radius:50%;cursor:pointer;border:2px solid transparent}
+.sw i.sel{border-color:#fff}
 </style>
 </head>
 <body>
-
-<header class="top">
-  <div class="wrap">
-    <a href="#" class="logo" aria-label="Hogar Hogareña, inicio"><svg width="46" height="37" aria-hidden="true" viewBox="0 0 360 290" xmlns="http://www.w3.org/2000/svg"><g fill="none" stroke="#14eb4a" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"><path stroke-width="17" d="M16 112 162 20 312 112"/><path d="M56 124V261H240M274 124V215"/><rect x="70" y="136" width="88" height="82"/><path d="M114 136V218M70 177H158"/><path d="M190 261V136H254V261"/></g><path fill="#14eb4a" d="M236 276C228 270 230 258 240 254C238 244 248 234 260 236C262 218 270 206 288 206C304 206 312 218 310 230C324 226 338 236 336 248C348 252 350 268 340 274C336 278 332 278 326 278Z"/></svg>Hogar Hogareña</a>
-    <button class="pub" id="pub" type="button" aria-haspopup="dialog">Publicar <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+<div id="pk">
+  <button id="pb" aria-label="Cambiar color">🎨</button>
+  <div id="pan">
+    <button id="gm">🎮 Modo gamer</button>
+    <div class="sw" id="sw"></div>
   </div>
-</header>
+</div>
+<main>
+  <h1>🍅 MI POMODORO</h1>
 
-<main class="wrap">
-  <div class="filters" role="search">
-    <div class="f">
-      <input class="sq" id="ubi" type="text" placeholder="País, Estado, Ciudad" autocomplete="off" aria-label="País, Estado, Ciudad">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-      <div class="sug" id="sug" hidden></div>
+  <section class="card">
+    <div class="modes">
+      <button id="mw" class="on">Trabajo</button>
+      <button id="mr">Descanso</button>
     </div>
-    <div class="f dd" id="dd-op">
-      <button class="sq" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Alquilar o comprar"><span class="lbl"></span></button>
-      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
-      <div class="panel" role="listbox" aria-label="Alquilar o comprar"></div>
-    </div>
-    <div class="f dd" id="dd-tipo">
-      <button class="sq" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Tipo de propiedad"><span class="lbl"></span></button>
-      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
-      <div class="panel" role="listbox" aria-label="Tipo de propiedad"></div>
-    </div>
-    <div class="f dd" id="dd-precio">
-      <button class="sq" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Precio"><span class="lbl"></span></button>
-      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
-      <div class="panel" role="group" aria-label="Precio">
-        <button class="opt" type="button" id="p-any" role="option" aria-selected="true"><span class="radio"></span>Cualquier precio</button>
-        <div class="mons" role="radiogroup" aria-label="Moneda">
-          <button class="mo" type="button" role="radio" data-m="USD" aria-selected="false" title="Dólar de Estados Unidos"><span class="radio"></span>USD</button>
-          <button class="mo" type="button" role="radio" data-m="PEN" aria-selected="true" title="Sol peruano"><span class="radio"></span>Soles</button>
-        </div>
-        <div class="rango">
-          <input class="num" id="p-desde" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="9" placeholder="Desde" autocomplete="off" aria-label="Precio desde">
-          <input class="num" id="p-hasta" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="9" placeholder="Hasta" autocomplete="off" aria-label="Precio hasta">
-        </div>
-        <button class="ver" type="button" id="p-ver">Ver resultados</button>
+    <div class="time" id="time">00:50:00</div>
+    <div class="status" id="status"></div>
+    <div class="bar"><i id="bar"></i></div>
+    <div class="ctrl">
+      <button id="go" class="on">Iniciar</button>
+      <div class="seg">
+        <button id="t0" title="Inicia ahora mismo">Libre</button>
+        <button id="t1" title="Espera a la hora indicada y luego inicia solo">A la hora</button>
       </div>
+      <button id="rs">Reiniciar</button>
     </div>
-    <div class="f dd" id="dd-mas">
-      <button class="sq" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Más filtros"><span class="lbl"></span></button>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>
-      <div class="panel" role="listbox" aria-label="Más filtros" aria-multiselectable="true"></div>
+
+    <div class="cfg">
+      <div><span class="t">Trabajo</span>
+        <input type="number" id="wh" min="0" max="12"> <label>h</label>
+        <input type="number" id="wm" min="0" max="59"> <label>min</label></div>
+      <div><span class="t">Descanso</span>
+        <input type="number" id="rh" min="0" max="12"> <label>h</label>
+        <input type="number" id="rm" min="0" max="59"> <label>min</label></div>
+      <div><span class="t">Hora de inicio (0–24 : 0–59 : 0–59)</span>
+        <input type="number" id="th" min="0" max="24"> :
+        <input type="number" id="tm" min="0" max="59"> :
+        <input type="number" id="ts" min="0" max="59">
+        <select id="tz"></select>
+        <small id="clock"></small></div>
+      <div><span class="t">Rondas (trabajo + descanso)</span>
+        <input type="number" id="rd" min="0" max="99"> <label>veces</label>
+        <small>0 = sin límite</small></div>
     </div>
-  </div>
+  </section>
 
-  <div class="layout">
-    <section aria-label="Resultados">
-      <div id="sel" hidden aria-live="polite"></div>
-      <div class="bar">
-        <h1 id="titulo" aria-live="polite"></h1>
-        <div class="btns">
-          <div class="dd dd-orden" id="dd-orden">
-            <button class="ob" type="button" aria-haspopup="listbox" aria-expanded="false"><span class="lbl">Ordenar</span> <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 4v16M4 16l4 4 4-4M16 20V4M12 8l4-4 4 4"/></svg></button>
-            <div class="panel" role="listbox" aria-label="Ordenar"></div>
-          </div>
-        </div>
-      </div>
-      <div class="list" id="list"></div>
-    </section>
+  <section class="card">
+    <div class="head"><h2>Metas</h2><button id="na">+ Añadir</button></div>
+    <ul id="list"></ul>
+  </section>
 
-    <aside class="map" aria-label="Mapa de propiedades">
-      <div class="canvas"><div id="mapa" role="application" aria-label="Mapa con las propiedades"></div><div class="mcard" id="mcard" hidden></div></div>
-      <button class="vm" id="vm" type="button" aria-pressed="false"><span id="vmt">Ver mapa</span>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h16M14 6l6 6-6 6"/></svg></button>
-    </aside>
-  </div>
+  <section class="card">
+    <div class="head"><h2>Mis notas</h2></div>
+    <textarea id="notes" placeholder="Escribe tus notas aquí…"></textarea>
+  </section>
+
+  <section class="card">
+    <div class="head"><h2>Base de datos</h2></div>
+    <div class="stats">
+      <div><b id="s1">0 min</b><small>Tiempo total</small></div>
+      <div><b id="s2">0/0</b><small>Metas cumplidas</small></div>
+      <div><b id="s3">0%</b><small>Cumplimiento</small></div>
+    </div>
+    <div class="ctrl" style="margin-top:14px"><button id="cl">Reiniciar tiempo total</button></div>
+  </section>
 </main>
 
-<dialog id="dlg" aria-labelledby="dlg-t">
-  <form id="pf" novalidate autocomplete="off">
-    <div class="pf-h">
-      <h2 id="dlg-t">Publicar propiedad</h2>
-      <button class="pf-x" id="pf-x" type="button" aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
-    </div>
-    <p class="pf-nota">Tu anuncio se revisa antes de mostrarse en la página.</p>
-    <div class="pf-seg" role="radiogroup" aria-label="Operación">
-      <label><input type="radio" name="op" value="alquiler" checked><span>En alquiler</span></label>
-      <label><input type="radio" name="op" value="venta"><span>En venta</span></label>
-      <label><input type="radio" name="op" value="proyecto"><span>En proyectos</span></label>
-    </div>
-    <div class="pf-g">
-      <label class="pf-l full">Tipo de propiedad<select class="pf-i" name="tipo"></select></label>
-      <div class="pf-l full">Precio
-        <div class="pf-precio">
-          <input class="pf-i" name="precio" type="text" inputmode="numeric" placeholder="Monto" aria-label="Precio" autocomplete="off">
-          <div class="pf-seg" role="radiogroup" aria-label="Moneda">
-            <label><input type="radio" name="mon" value="US$"><span>USD</span></label>
-            <label><input type="radio" name="mon" value="S/" checked><span>S/</span></label>
-          </div>
-        </div>
-      </div>
-      <label class="pf-l">Superficie (m²)<input class="pf-i dig" name="m2" type="text" inputmode="numeric" maxlength="6" placeholder="0"></label>
-      <label class="pf-l">Dormitorios<input class="pf-i dig" name="dorm" type="text" inputmode="numeric" maxlength="2" placeholder="0"></label>
-      <label class="pf-l">Baños<input class="pf-i dig" name="ban" type="text" inputmode="numeric" maxlength="2" placeholder="0"></label>
-      <label class="pf-l">Estacionamientos<input class="pf-i dig" name="est" type="text" inputmode="numeric" maxlength="2" placeholder="0"></label>
-      <div class="pf-l full">Ubicación<div class="pf-ac"><input class="pf-i" name="zona" type="text" maxlength="80" placeholder="País, Estado, Ciudad" autocomplete="off" aria-label="Ubicación" aria-controls="pf-zsug"><div class="sug" id="pf-zsug" role="listbox" hidden></div></div></div>
-      <div class="pf-l full" id="pf-mapa-box">Dirección, toca el lugar de tu propiedad<div class="pf-mw"><div id="pf-mapa"></div><div id="pf-mapa-vacio">No hay propiedades con estos filtros.</div></div></div>
-      <label class="pf-l full">Descripción<textarea class="pf-i" name="descr" maxlength="250" placeholder="Cuenta lo más importante"></textarea></label>
-      <div class="pf-l full">Tu WhatsApp o teléfono
-        <div class="pf-tel">
-          <select class="pf-i" name="pais" aria-label="País"></select>
-          <input class="pf-i" name="tel" type="tel" inputmode="numeric" maxlength="15" aria-label="Número" autocomplete="off">
-        </div>
-      </div>
-      <div class="pf-l full" role="group" aria-label="Fotos">Fotos JPG, Máximo 15 MB
-        <div class="pf-fotos" id="pf-fotos"></div>
-        <input id="pf-file" type="file" accept="image/jpeg" multiple hidden>
-      </div>
-    </div>
-    <div class="pf-trampa" aria-hidden="true"><label>No llenar este campo<input name="web" type="text" tabindex="-1" autocomplete="off"></label></div>
-    <div id="pf-ts"></div>
-    <p class="pf-msg" id="pf-msg" role="status" aria-live="polite"></p>
-    <button class="pf-send" id="pf-send" type="submit">Enviar para revisión</button>
-  </form>
-</dialog>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
-<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
 <script>
-const LATAM=[[-56,-135],[58,-34]]; // vista inicial: América (el nombre LATAM se conserva por el resto del código)
-const props=[]; // sin ejemplos: solo se muestran los anuncios aprobados en Supabase
-// cada propiedad tiene 3 fotos: la primera es `img`; las otras dos se buscan como nombre-2.webp y nombre-3.webp en la misma carpeta (ej.: depto1.webp, depto1-2.webp, depto1-3.webp)
-props.forEach(p=>{const b=p.img.replace(/\.webp$/,'');p.imgs=[p.img,b+'-2.webp',b+'-3.webp']});
-const plural={Departamento:'departamentos',Casa:'casas',Terreno:'terrenos','Local comercial':'locales comerciales',Oficina:'oficinas',Cochera:'cocheras','Local industrial':'locales industriales'};
-const TC=3.33;
-const redondear=(v,aMoneda)=>aMoneda==='USD'?Math.ceil(v-1e-9):Math.floor(v+1e-9);
-const I={
- heart:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-8-5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 9c0 6-8 11-8 11z"/></svg>',
- wa:'<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.2 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.2-4.600-4-4.700-4.200-.1-.2-1.100-1.500-1.100-2.800s.7-2 1-2.300c.2-.3.500-.3.700-.3h.5c.2 0 .4 0 .6.500l.9 2.100c.1.200.1.400 0 .600l-.4.600c-.2.200-.3.400-.1.700.2.300.8 1.300 1.800 2.100 1.200 1 2.200 1.300 2.500 1.500.3.100.5.100.7-.1l.9-1.100c.2-.3.400-.2.700-.1l2 1c.3.100.5.200.6.300.1.200.1.800-.1 1.500z"/></svg>'
+const $=id=>document.getElementById(id);
+const store={
+  get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
 };
-const $=s=>document.querySelector(s);
-const fmt=n=>n.toLocaleString('en-US');
-const corto=n=>n>=1e6?+(n/1e6).toFixed(2)+'M':n>=1e3?+(n/1e3).toFixed(n<1e4?1:0)+'K':String(n);
-const num=n=>{n=String(n||'');return /^54[1-8]\d{9}$/.test(n)?'549'+n.slice(2):n}; // Argentina: el celular lleva un 9 después del 54 (54 + 10 dígitos pasa a 54 9 + 10 dígitos)
-const wa=(t,n)=>'https://wa.me/'+num(n)+'?text='+encodeURIComponent(t);
-/* ===== Supabase: anuncios que publica la gente (ver nota 9 y el archivo supabase-completo.sql) ===== */
-const SB_URL='https://gjvmpvzekigveggbsyfe.supabase.co';  // ej.: 'https://abcdefgh.supabase.co'  (Project Settings > API > Project URL)
-const SB_KEY='sb_publishable_VWav2M1QSUNaS2xfOZYcbw_L40bNwuA';  // clave pública: 'anon' (empieza con eyJ...) o 'publishable' (empieza con sb_publishable_...)
-const TS_SITEKEY='0x4AAAAAAF1dJ-ubBRbB5FMW';  // Cloudflare > Turnstile > tu widget > Site Key (es pública)
-const FN_URL=SB_URL+'/functions/v1/publicar';  // función de Supabase que verifica Turnstile y guarda el anuncio
-const PROY=['Departamento','Casa','Terreno','Oficina']; // tipos que pueden ser Proyecto
-const FL={prev:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg>',
-  next:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>'};
-const fotosDe=p=>p.imgs&&p.imgs.length?p.imgs:[p.img];
-const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const sbH=(extra)=>Object.assign({apikey:SB_KEY},SB_KEY.startsWith('eyJ')?{Authorization:'Bearer '+SB_KEY}:{},extra||{});
-// una fila de la tabla propiedades -> el mismo formato que usa la lista props (id desde 100000 para no chocar con los de ejemplo)
-function aProp(r){
-  if(!plural[r.tipo]||(r.op!=='alquiler'&&r.op!=='venta'&&r.op!=='proyecto')||(r.op==='proyecto'&&!PROY.includes(r.tipo))||!isFinite(r.lat)||!isFinite(r.lng))return null;
-  const f=(Array.isArray(r.fotos)?r.fotos:[]).filter(u=>typeof u==='string'&&u.startsWith(SB_URL+'/storage/'));
-  return {id:100000+r.id,img:f[0]||'',imgs:f.length?f:undefined,op:r.op,tipo:r.tipo,precio:+r.precio||0,mon:r.mon==='US$'?'US$':'S/',m2:+r.m2||0,dorm:+r.dorm||0,ban:+r.ban||0,est:+r.est||0,
-    dir:String(r.dir||''),zona:String(r.zona||''),am:[],desc:String(r.descr||''),tel:String(r.tel||'').replace(/\D/g,''),lat:+r.lat,lng:+r.lng};
+const TZ=[['America/Lima','Perú (Lima)'],['America/Bogota','Colombia'],['America/Mexico_City','México'],
+['America/Argentina/Buenos_Aires','Argentina'],['America/Santiago','Chile'],['America/New_York','EE. UU. (Este)'],
+['America/Los_Angeles','EE. UU. (Pacífico)'],['Europe/Madrid','España'],['UTC','UTC']];
+const pad=n=>String(n).padStart(2,'0');
+function nowIn(tz){
+  const p=new Intl.DateTimeFormat('en-GB',{timeZone:tz,hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}).formatToParts(new Date());
+  const g=t=>+p.find(x=>x.type===t).value;
+  return [g('hour'),g('minute'),g('second')];
 }
-async function cargarPublicadas(){
-  if(!SB_URL||!SB_KEY)return;
-  try{
-    const r=await fetch(SB_URL+'/rest/v1/propiedades?select=*&estado=eq.aprobada&order=creado.desc&limit=500',{headers:sbH()});
-    if(!r.ok)throw new Error(r.status);
-    const filas=(await r.json()).map(aProp).filter(Boolean);
-    if(filas.length){props.push(...filas);render()}
-  }catch(e){console.warn('No se pudieron cargar los anuncios publicados',e)}
-}
-const estado={op:'alquiler',tipo:'Departamento',mon:'PEN',desde:0,hasta:0,zona:null,zonaNombre:'',mf:{sup:0,dorm:0,ban:0,est:0},orden:-1}; // orden: -1 = mayor precio (por defecto), 1 = menor precio
-let fav=new Set(), mapa=null, capa=null, marcas={}, visibles=[], selId=null;
+const def={hue:180,gamer:false,wh:0,wm:50,rh:0,rm:10,rounds:4,sync:false,tz:'America/Lima',th:null,tm:0,ts:0};
+let st=Object.assign({},def,store.get('pomo2',{}),store.get('pomo3',{}));
+if(st.th===null)st.th=(nowIn(st.tz)[0]+1)%24;
+let goals=store.get('goals2',[{text:'',done:false}]);
+if(!goals.length)goals=[{text:'',done:false}];
+let tot=store.get('tot2',0);
+$('notes').value=store.get('notes2','');
+let mode='w',running=false,waiting=false,end=0,waitEnd=0,left=0,tick=null,gt=null,lastT=0,round=1,msg='';
+function save(){store.set('pomo3',st)}
 
-/* mapa real: Leaflet + mapa estándar de OpenStreetMap (colores normales, calles y nombres), todo el mundo */
-function iniciarMapa(){
-  if(!window.L)return;
-  mapa=L.map('mapa',{zoomSnap:.25,minZoom:2,zoomControl:false,maxBounds:[[-85,-180],[85,180]],maxBoundsViscosity:1,dragging:!L.Browser.mobile});
-  mapa.fitBounds(LATAM,{animate:false});
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,noWrap:true,
-    attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'}).addTo(mapa);
-  capa=L.layerGroup().addTo(mapa);
-  mapa.on('zoomend',()=>pintar(visibles));
-  L.control.zoom({position:'bottomright',zoomInTitle:'Acercar',zoomOutTitle:'Alejar'}).addTo(mapa); // se agrega después de la atribución, así queda encima
-  // límite: no se puede alejar más de lo que cabe un solo mundo (sin bordes vacíos ni mundos repetidos)
-  const ajustar=()=>{const t=mapa.getSize();if(!t.x||!t.y)return;const z=mapa.getBoundsZoom(L.latLngBounds([[-85,-180],[85,180]]),true);if(isFinite(z))mapa.setMinZoom(Math.max(1,z))};
-  mapa.on('resize',ajustar);
-  if(window.ResizeObserver)new ResizeObserver(()=>mapa.invalidateSize()).observe(mapa.getContainer()); // si cambia el tamaño del mapa (ej.: aparece la tarjeta) se reacomoda solo
-  setTimeout(()=>{mapa.invalidateSize();ajustar()},0);
-  addEventListener('resize',()=>{mapa.invalidateSize();$('#sel').style.minHeight=''});
+/* ---------- Colores (0, 45, 90 … 315) ---------- */
+const hues=[0,45,90,135,315,270,225,180];
+const sw=$('sw');
+hues.forEach(h=>{const i=document.createElement('i');i.style.background=`hsl(${h} 70% 85%)`;i.dataset.h=h;
+  i.onclick=()=>{st.gamer=false;st.hue=h;applyColor();save()};sw.appendChild(i)});
+function applyColor(){
+  document.documentElement.style.setProperty('--h',st.hue);
+  [...sw.children].forEach(i=>i.classList.toggle('sel',!st.gamer&&+i.dataset.h===st.hue));
+  $('gm').classList.toggle('on',st.gamer);
+  clearInterval(gt);
+  if(st.gamer)gt=setInterval(()=>{st.hue=(st.hue+1)%360;document.documentElement.style.setProperty('--h',st.hue)},60);
 }
-function pintar(r){
-  if(!mapa)return;
-  capa.clearLayers();marcas={};
-  // se agrupan las propiedades que quedan a menos de 64 px entre sí (desde el zoom 17 ya no se agrupa)
-  const z=mapa.getZoom(),grupos={};
-  r.forEach(p=>{
-    const pt=mapa.project([p.lat,p.lng],z),k=z>=17?p.id:Math.floor(pt.x/96)+':'+Math.floor(pt.y/60);
-    (grupos[k]=grupos[k]||[]).push(p);
-  });
-  Object.values(grupos).forEach(g=>{
-    if(g.length>1){
-      const b=L.latLngBounds(g.map(p=>[p.lat,p.lng]));
-      L.marker(b.getCenter(),{keyboard:false,icon:L.divIcon({className:'pinwrap',iconSize:[0,0],html:`<span class="grupo">${g.length}</span>`})})
-        .addTo(capa).on('click',()=>mapa.fitBounds(b,{padding:[70,70],maxZoom:17}));
-      return;
+$('gm').onclick=()=>{st.gamer=!st.gamer;applyColor();save()};
+$('pb').onclick=()=>$('pan').classList.toggle('open');
+
+/* ---------- Utilidades de tiempo ---------- */
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v||0));
+function total(m){return m==='w'?(st.wh*60+st.wm)*60:(st.rh*60+st.rm)*60}
+function fmt(s){s=Math.max(0,Math.ceil(s));return [Math.floor(s/3600),Math.floor(s%3600/60),s%60].map(pad).join(':')}
+function fmtMin(s){const m=Math.floor(s/60);return m>=60?Math.floor(m/60)+' h '+(m%60)+' min':m+' min'}
+function tzName(){return (TZ.find(t=>t[0]===st.tz)||[0,st.tz])[1]}
+function targetHMS(){return pad(st.th%24)+':'+pad(st.tm)+':'+pad(st.ts)}
+function secsUntil(){
+  const [h,m,s]=nowIn(st.tz);
+  let d=((st.th%24)*3600+st.tm*60+st.ts)-(h*3600+m*60+s);
+  if(d<0)d+=86400;
+  return d-(Date.now()%1000)/1000;
+}
+
+/* ---------- Temporizador ---------- */
+function status(){
+  let t;
+  if(waiting)t=`Esperando las ${targetHMS()} (${tzName()}) para iniciar solo`;
+  else if(msg)t=msg;
+  else t=`Ronda ${round}${st.rounds>0?' / '+st.rounds:''} · ${mode==='w'?'Trabajo':'Descanso'}`;
+  $('status').textContent=t;
+}
+function draw(){
+  if(waiting){$('time').textContent=fmt((waitEnd-Date.now())/1000);$('bar').style.width='0'}
+  else{const t=total(mode)||1;$('time').textContent=fmt(left);$('bar').style.width=(100-left/t*100)+'%'}
+  status();
+  document.title=((running||waiting)?fmt(waiting?(waitEnd-Date.now())/1000:left)+' · ':'')+'Mi Pomodoro';
+}
+function setMode(m){
+  mode=m;$('mw').classList.toggle('on',m==='w');$('mr').classList.toggle('on',m==='r');
+  left=total(m);if(running)end=Date.now()+left*1000;draw();
+}
+function beep(){
+  try{const a=new (window.AudioContext||window.webkitAudioContext)();
+    [0,.25,.5].forEach(d=>{const o=a.createOscillator(),g=a.createGain();o.frequency.value=660;
+      o.connect(g);g.connect(a.destination);g.gain.setValueAtTime(.15,a.currentTime+d);
+      g.gain.exponentialRampToValueAtTime(.001,a.currentTime+d+.2);o.start(a.currentTime+d);o.stop(a.currentTime+d+.22)})}catch(e){}
+}
+function account(){
+  const now=Date.now();
+  tot+=(now-lastT)/1000;store.set('tot2',tot);stats();
+  lastT=now;
+}
+function finish(){
+  running=false;clearInterval(tick);round=1;$('go').textContent='Iniciar';
+  setMode('w');msg='¡Completaste todas las rondas! 🎉';draw();
+}
+function loop(){
+  if(waiting){
+    if(waitEnd-Date.now()<=0){waiting=false;begin()}else draw();
+    return;
+  }
+  account();
+  left=(end-Date.now())/1000;
+  if(left<=0){
+    beep();
+    if(mode==='w')setMode('r');
+    else{round++;if(st.rounds>0&&round>st.rounds){finish();return}setMode('w')}
+  }
+  draw();
+}
+function begin(){
+  msg='';running=true;end=Date.now()+left*1000;lastT=Date.now();
+  $('go').textContent='Pausa';clearInterval(tick);tick=setInterval(loop,250);loop();
+}
+function start(){
+  if(total(mode)<=0)return;
+  const fresh=mode==='w'&&round===1&&left>=total('w')-1;
+  if(st.sync&&fresh){
+    const rem=secsUntil();
+    if(rem>0){
+      msg='';waiting=true;waitEnd=Date.now()+rem*1000;
+      $('go').textContent='Cancelar';clearInterval(tick);tick=setInterval(loop,250);draw();return;
     }
-    const p=g[0];
-    const m=L.marker([p.lat,p.lng],{keyboard:false,icon:L.divIcon({className:'pinwrap',iconSize:[0,0],html:`<span class="pin">${monSim()} ${corto(pv(p))}</span>`})}).addTo(capa);
-    const pin=m.getElement().querySelector('.pin');
-    if(p.id===selId)pin.classList.add('sel');
-    // al pasar el mouse (o tocar) un precio, la tarjeta de arriba cambia a esa propiedad; la página no se mueve
-    pin.addEventListener('pointerenter',()=>elegir(p.id));
-    m.on('click',()=>elegir(p.id));
-    marcas[p.id]=m;
-  });
+  }
+  begin();
 }
-function resaltar(id,on){
-  const m=marcas[id];if(!m)return;
-  const el=m.getElement();if(el&&el.querySelector('.pin'))el.querySelector('.pin').classList.toggle('on',on);
-  m.setZIndexOffset(on?1000:0);
+function pause(){
+  if(waiting){waiting=false;clearInterval(tick);$('go').textContent='Iniciar';draw();return}
+  if(running){account();left=Math.max(0,(end-Date.now())/1000)}
+  running=false;clearInterval(tick);$('go').textContent='Iniciar';draw();
 }
+$('go').onclick=()=>(running||waiting)?pause():start();
+$('rs').onclick=()=>{pause();round=1;msg='';setMode('w')};
+$('mw').onclick=()=>{pause();msg='';setMode('w')};
+$('mr').onclick=()=>{pause();msg='';setMode('r')};
 
-/* tarjeta de arriba: la propiedad elegida en el mapa */
-function elegir(id){
-  if(id===selId)return;
-  selId=id;
-  Object.keys(marcas).forEach(k=>{const el=marcas[k].getElement().querySelector('.pin');if(el)el.classList.toggle('sel',+k===id)});
-  mostrarSel(true);
-}
-function mostrarSel(animar){
-  const box=$('#sel'),p=visibles.find(x=>x.id===selId);
-  box.hidden=!p;
-  const mc=$('#mcard'),grande=$('.layout').classList.contains('mg');
-  mc.hidden=!grande;mc.classList.toggle('vacia',grande&&!p); // en Ver mapa la tarjeta siempre ocupa su lugar; si no hay propiedades queda vacía
-  mc.innerHTML=grande?(p?cardHTML(p,true,true):'<div class="card sin">No hay propiedades con estos filtros.</div>'):'';
-  box.innerHTML=p?cardHTML(p,true):'';
-  if(p&&animar)box.firstElementChild.classList.add('cambia');
-  // el contenedor conserva el alto mayor visto, así la lista de abajo no se mueve al cambiar de propiedad
-  box.style.minHeight=p?Math.max(parseFloat(box.style.minHeight)||0,box.offsetHeight)+'px':'';
-}
-
-const cardHTML=(p,top,sinNota)=>`
-    <article class="card${top?' top':''}" data-pid="${p.id}"${top?'':` data-id="${p.id}"`}>
-      <div class="pic">
-        <div class="pics">${fotosDe(p).map((u,i)=>`<div class="sl"><div class="ph"><span>IMAGEN: ${esc(u)}</span></div><img src="${esc(u)}" alt="${esc(p.tipo)} en ${esc(p.zona)}, foto ${i+1}" loading="lazy" onload="this.previousElementSibling&&this.previousElementSibling.remove()" onerror="this.remove()"></div>`).join('')}</div>
-        ${fotosDe(p).length>1?`<button class="pn prev" type="button" aria-label="Foto anterior">${FL.prev}</button><button class="pn next" type="button" aria-label="Foto siguiente">${FL.next}</button><div class="dots">${fotosDe(p).map((_,i)=>`<button class="dot" type="button" aria-label="Ver foto ${i+1}" aria-current="${i===0}"></button>`).join('')}</div>`:''}
-      </div>
-      <div class="body">
-        <button class="heart" type="button" aria-label="Guardar en favoritos" aria-pressed="${fav.has(p.id)}">${I.heart}</button>
-        <div class="prow"><p class="price">${precioTxt(p)}</p>${top&&!sinNota?'<p class="selnota">Seleccionado en el mapa</p>':''}</div>
-        <div class="spec"><span>${p.m2} m² tot.</span>${p.dorm>0?`<span>${p.dorm} dorm.</span>`:''}${p.ban>0?`<span>${p.ban} ${p.ban===1?'baño.':'baños.'}</span>`:''}${p.est>0?`<span>${p.est} estac.</span>`:''}</div>
-        <p class="addr">${esc(p.dir)}</p>
-        <p class="zona">${esc(p.zona)}</p>
-        <p class="desc">${esc(p.desc)}</p>
-        <div class="foot">
-          <div class="acts">
-            ${p.tel?`<a class="wa" href="${wa(`Hola, me interesa el ${p.tipo.toLowerCase()} en ${p.op}: ${p.dir}, ${p.zona}`,p.tel)}" target="_blank" rel="noopener">WhatsApp ${I.wa}</a>`:''}
-          </div>
-        </div>
-      </div>
-    </article>`;
-
-// precio de la propiedad expresado en la moneda elegida (USD o PEN)
-const valorEn=(p,m)=>{const usd=p.mon==='US$';return m==='USD'?(usd?p.precio:p.precio/TC):(usd?p.precio*TC:p.precio)};
-// precio mostrado en la moneda elegida en Precio (Soles o USD): lo usan las tarjetas, el mapa y el rango
-const monSim=()=>estado.mon==='USD'?'US$':'S/';
-const pv=p=>redondear(valorEn(p,estado.mon),estado.mon);
-const precioTxt=p=>`${monSim()} ${fmt(pv(p))}`;
-function render(){
-  const {op,tipo,desde,hasta,mon,mf}=estado, zona=estado.zona;
-  const r=props.filter(p=>p.op===op&&p.tipo===tipo&&(!desde||valorEn(p,mon)>=desde)&&(!hasta||valorEn(p,mon)<=hasta)&&(!zona||zona.contains([p.lat,p.lng]))&&p.m2>=mf.sup&&(p.dorm||0)>=mf.dorm&&(p.ban||0)>=mf.ban&&(p.est||0)>=mf.est);
-  r.sort((a,b)=>(a.precio-b.precio)*estado.orden);
-  visibles=r;
-  if(!r.some(x=>x.id===selId))selId=r.length?r[0].id:null;
-  const may=t=>t.charAt(0).toUpperCase()+t.slice(1); // primera letra de cada elemento elegido en mayúscula
-  const nom=may(r.length===1?tipo:plural[tipo]);
-  $('#titulo').textContent=`${r.length} ${nom} en ${may(op)} en ${zona?may(estado.zonaNombre||'esta zona'):'América'}`;
-  $('#list').innerHTML=r.length?r.map(p=>cardHTML(p,false)).join(''):
-    `<div class="vacio">No hay propiedades con estos filtros.</div>`;
-  pintar(r);
-  mostrarSel(false);
-}
-
-/* filtros desplegables: se abren debajo, el ∨ pasa a ∧ y las opciones salen en un squircle */
-const DD={
-  op:{opts:()=>[['Alquilar','alquiler'],['Comprar','venta'],['Proyectos','proyecto']]},
-  tipo:{opts:()=>[['Departamento','Departamento'],['Casa','Casa'],['Terreno','Terreno'],['Oficina','Oficina'],['Local comercial','Local comercial'],['Local industrial','Local industrial'],['Cochera | Garaje','Cochera']].filter(o=>estado.op!=='proyecto'||PROY.includes(o[1]))}, // con Proyecto solo salen Departamento, Casa, Terreno y Oficina
-  orden:{fijo:true,opts:()=>[['Mayor precio',-1],['Menor precio',1]]} // el texto "Ordenar" no cambia
-};
-function dibujar(k){
-  const d=DD[k],box=$('#dd-'+k),opts=d.opts();
-  const on=v=>estado[k]===v;
-  box.querySelector('.panel').innerHTML=opts.map(([t,v],i)=>`<button class="opt" type="button" role="option" aria-selected="${on(v)}" data-i="${i}"><span class="radio"></span>${t}</button>`).join('');
-  if(d.fijo)return;
-  const l=box.querySelector('.lbl');
-  l.textContent=opts.find(o=>o[1]===estado[k])[0];
-}
-const btn=f=>f.querySelector(':scope > button');
-function cerrar(){document.querySelectorAll('.dd.open').forEach(f=>{f.classList.remove('open');btn(f).setAttribute('aria-expanded','false')})}
-function alternar(k){
-  const f=$('#dd-'+k),abrir=!f.classList.contains('open');
-  cerrar();
-  if(abrir){f.classList.add('open');btn(f).setAttribute('aria-expanded','true')}
-}
-Object.keys(DD).forEach(k=>{
-  dibujar(k);
-  const f=$('#dd-'+k);
-  btn(f).addEventListener('click',()=>alternar(k));
-  f.querySelector('.panel').addEventListener('click',e=>{
-    const b=e.target.closest('.opt');if(!b)return;
-    const v=DD[k].opts()[+b.dataset.i][1];
-    estado[k]=v;
-    if(k==='op'){if(v==='proyecto'&&!PROY.includes(estado.tipo))estado.tipo='Departamento';dibujar('tipo')}
-    dibujar(k);
-    cerrar();btn(f).focus();
-    render();
-  });
-  f.addEventListener('keydown',e=>{
-    if(e.key==='Escape'){cerrar();btn(f).focus();return}
-    if(e.key!=='ArrowDown'&&e.key!=='ArrowUp')return;
-    e.preventDefault();
-    if(!f.classList.contains('open'))alternar(k);
-    const o=[...f.querySelectorAll('.opt')],i=o.indexOf(document.activeElement);
-    o[e.key==='ArrowDown'?Math.min(i+1,o.length-1):Math.max(i-1,0)].focus();
-  });
+/* ---------- Opciones ---------- */
+TZ.forEach(([v,n])=>{const o=document.createElement('option');o.value=v;o.textContent=n;$('tz').appendChild(o)});
+$('tz').value=st.tz;
+$('tz').onchange=()=>{st.tz=$('tz').value;save();clock();draw()};
+[['wh','wh',0,12],['wm','wm',0,59],['rh','rh',0,12],['rm','rm',0,59],
+ ['th','th',0,24],['tm','tm',0,59],['ts','ts',0,59],['rd','rounds',0,99]].forEach(([id,k,a,b])=>{
+  const el=$(id);el.value=st[k];
+  el.onchange=()=>{st[k]=clamp(parseInt(el.value),a,b);el.value=st[k];save();
+    if(!running&&!waiting){left=total(mode)}draw()}
 });
-/* Más filtros: Sin filtros + Superficie, Dormitorios, Baños y Estacionamientos (solo números; 0 = sin filtro; con número se ve 3+ / 60 m² +) */
-(function(){
-  const f=$('#dd-mas'),panel=f.querySelector('.panel'),lbl=f.querySelector('.lbl');
-  const CAMPOS=[['sup','Superficie','m² +'],['dorm','Dormitorios','+'],['ban','Baños','+'],['est','Estacionamientos','+']];
-  panel.removeAttribute('aria-multiselectable');
-  panel.innerHTML='<button class="opt" type="button" id="mf-ninguno" role="option" aria-selected="true"><span class="check"></span>Sin filtros</button>'+
-    CAMPOS.map(([k,t,suf])=>`<div class="mfrow"><label for="mf-${k}">${t}</label><div class="nf" data-k="${k}"><input id="mf-${k}" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="5" value="0" autocomplete="off"><span class="suf">${suf}</span></div></div>`).join('');
-  const ning=$('#mf-ninguno');
-  function pintarCampo(k){
-    const nf=panel.querySelector(`.nf[data-k="${k}"]`),inp=nf.querySelector('input');
-    nf.classList.toggle('on',estado.mf[k]>0);
-    inp.style.width=Math.max(1,inp.value.length)+'ch';
-  }
-  function actualizar(){
-    const n=CAMPOS.filter(([k])=>estado.mf[k]>0).length;
-    lbl.textContent='Más filtros'+(n?` (${n})`:'');
-    ning.setAttribute('aria-selected',n===0);
-    CAMPOS.forEach(([k])=>pintarCampo(k));
-  }
-  btn(f).addEventListener('click',()=>alternar('mas'));
-  f.addEventListener('keydown',e=>{if(e.key==='Escape'){cerrar();btn(f).focus()}});
-  ning.addEventListener('click',()=>{
-    CAMPOS.forEach(([k])=>{estado.mf[k]=0;panel.querySelector('#mf-'+k).value='0'});
-    actualizar();render();
-  });
-  CAMPOS.forEach(([k])=>{
-    const inp=panel.querySelector('#mf-'+k),nf=inp.parentElement;
-    nf.addEventListener('click',()=>inp.focus());
-    inp.addEventListener('focus',()=>inp.select());
-    // solo números: se bloquea cualquier otro carácter al escribir y se limpia al pegar
-    inp.addEventListener('beforeinput',e=>{if(e.data&&/\D/.test(e.data))e.preventDefault()});
-    inp.addEventListener('input',()=>{
-      inp.value=inp.value.replace(/\D/g,'').replace(/^0+(?=\d)/,'');
-      estado.mf[k]=+inp.value||0;   // vacío o 0 = sin filtro
-      actualizar();render();
-    });
-    inp.addEventListener('blur',()=>{if(!inp.value)inp.value='0';actualizar()});
-  });
-  actualizar();
-})();
-/* Precio: "Cualquier precio" queda elegido siempre, salvo que se escriba un monto y se pulse "Ver resultados" */
-(function(){
-  const f=$('#dd-precio'),desde=$('#p-desde'),hasta=$('#p-hasta'),any=$('#p-any'),ver=$('#p-ver'),lbl=f.querySelector('.lbl');
-  let monB=estado.mon; // moneda marcada en el panel (se aplica al pulsar "Ver resultados")
-  const sim=()=>monB==='USD'?'US$':'S/';
-  function actualizar(){
-    // el botón muestra lo que se escribe: S/ 1+  /  S/ 1 - S/ 5  /  Hasta S/ 5
-    const d=+desde.value||0,h=+hasta.value||0,s=sim();
-    lbl.textContent=d&&h?`${s} ${fmt(d)} - ${s} ${fmt(h)}`:d?`${s} ${fmt(d)}+`:h?`Hasta ${s} ${fmt(h)}`:'Precio';
-    any.setAttribute('aria-selected',!estado.desde&&!estado.hasta);
-    f.querySelectorAll('.mo').forEach(b=>b.setAttribute('aria-selected',b.dataset.m===monB));
-  }
-  // al abrir, el panel vuelve a mostrar lo que está aplicado (lo escrito sin pulsar "Ver resultados" se descarta)
-  function sincronizar(){
-    monB=estado.mon;desde.value=estado.desde||'';hasta.value=estado.hasta||'';actualizar();
-  }
-  btn(f).addEventListener('click',()=>{if(!f.classList.contains('open'))sincronizar();alternar('precio')});
-  any.addEventListener('click',()=>{
-    estado.desde=estado.hasta=0;sincronizar();cerrar();btn(f).focus();render();
-  });
-  // la moneda se aplica al instante: cambian los precios de toda la página y el rango (aplicado o escrito) se convierte con TC
-  f.querySelectorAll('.mo').forEach(b=>b.addEventListener('click',()=>{
-    const nueva=b.dataset.m;if(nueva===monB)return;
-    const k=nueva==='USD'?1/TC:TC,cv=n=>n?Math.max(1,redondear(n*k,nueva)):0;
-    if(desde.value)desde.value=String(cv(+desde.value));
-    if(hasta.value)hasta.value=String(cv(+hasta.value));
-    estado.desde=cv(estado.desde);estado.hasta=cv(estado.hasta);
-    monB=estado.mon=nueva;actualizar();render();
-  }));
-  [desde,hasta].forEach(el=>{
-    // solo números: se bloquea cualquier otro carácter al escribir y se limpia al pegar
-    el.addEventListener('beforeinput',e=>{if(e.data&&/\D/.test(e.data))e.preventDefault()});
-    el.addEventListener('input',()=>{el.value=el.value.replace(/\D/g,'');actualizar()});
-    el.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();ver.click()}});
-  });
-  ver.addEventListener('click',()=>{
-    const d=+desde.value||0,h=+hasta.value||0;
-    if(d||h){estado.desde=d;estado.hasta=h;estado.mon=monB}  // solo se aplica si se puso algún monto
-    else{estado.desde=estado.hasta=0}                         // sin montos: sigue "Cualquier precio"
-    sincronizar();cerrar();btn(f).focus();render();
-  });
-  f.addEventListener('keydown',e=>{
-    if(e.key==='Escape'){cerrar();btn(f).focus()}
-    else if(e.key==='ArrowDown'&&e.target===btn(f)){e.preventDefault();if(!f.classList.contains('open')){sincronizar();alternar('precio')}desde.focus()}
-  });
-  // si se cierra sin pulsar "Ver resultados", el botón vuelve a mostrar lo que está aplicado
-  new MutationObserver(()=>{if(!f.classList.contains('open'))sincronizar()}).observe(f,{attributes:true,attributeFilter:['class']});
-  sincronizar();
-})();
-document.addEventListener('click',e=>{if(!e.target.closest('.dd'))cerrar()});
+function setSync(v){st.sync=v;$('t0').classList.toggle('on',!v);$('t1').classList.toggle('on',v);save()}
+$('t0').onclick=()=>setSync(false);
+$('t1').onclick=()=>setSync(true);
+function clock(){const [h,m,s]=nowIn(st.tz);$('clock').textContent=`Hora ahora en ${tzName()}: ${pad(h)}:${pad(m)}:${pad(s)}`}
+setInterval(clock,1000);
 
-iniciarMapa();render();cargarPublicadas();
-/* Ubicaciones: lista fija País > Estado/Departamento > Capital, en español (los países de habla inglesa, en inglés).
-   Lo escrito se compara con el INICIO de "País, Estado, Capital"; los resultados salen en orden alfabético, máximo 5. */
-(function(){
-  const inp=$('#ubi'),sug=$('#sug');
-  let lista=[],act=-1,qAct='',irSeq=0;
-  const MAX=5;
-  const msg=t=>{const p=document.createElement('p');p.className='msg';p.textContent=t;sug.replaceChildren(p)};
-  // nombre del país: en español, salvo los países donde el inglés es lengua nativa (se muestran en inglés)
-  const PAIS={AR:'Argentina',BO:'Bolivia',BR:'Brasil',CL:'Chile',CO:'Colombia',CR:'Costa Rica',DO:'República Dominicana',EC:'Ecuador',SV:'El Salvador',GT:'Guatemala',HN:'Honduras',MX:'México',NI:'Nicaragua',PA:'Panamá',PY:'Paraguay',PE:'Perú',PR:'Puerto Rico',UY:'Uruguay',VE:'Venezuela',
-    US:'United States',CA:'Canada',BZ:'Belize'};
-  // zona de cada país para el mapa: [sur, oeste, norte, este]
-  const CAJA={AR:[-55.1,-73.6,-21.8,-53.6],BO:[-22.9,-69.7,-9.7,-57.5],BR:[-33.8,-74,5.3,-34.8],CL:[-56,-75.7,-17.5,-66.4],CO:[-4.2,-79,13.4,-66.8],CR:[8,-85.95,11.2,-82.5],DO:[17.5,-72,19.95,-68.3],EC:[-5,-81.1,1.5,-75.2],SV:[13.15,-90.1,14.45,-87.7],GT:[13.7,-92.25,17.8,-88.2],HN:[12.98,-89.35,16.5,-83.1],MX:[14.5,-118.4,32.7,-86.7],NI:[10.7,-87.7,15,-82.6],PA:[7.2,-83.05,9.65,-77.15],PY:[-27.6,-62.65,-19.3,-54.3],PE:[-18.35,-81.33,-0.04,-68.65],PR:[17.9,-67.3,18.5,-65.2],UY:[-35,-58.45,-30.1,-53.1],VE:[0.65,-73.4,12.2,-59.8],
-    US:[24.5,-125,49.4,-66.9],CA:[42,-141,72,-52],BZ:[15.9,-89.25,18.5,-87.75]};
-  // los países de habla inglesa se muestran en inglés, pero también se encuentran escribiéndolos en español
-  const ALIAS={US:'Estados Unidos',CA:'Canadá',BZ:'Belice'};
-  // País > [estado, capital]
-  const DATOS={"PE":[["Amazonas","Chachapoyas"],["Amazonas","Bagua"],["Amazonas","Jumbilla"],["Amazonas","Santa María de Nieva"],["Amazonas","Lámud"],["Amazonas","San Nicolás"],["Amazonas","Bagua Grande"],["Áncash","Huaraz"],["Áncash","Aija"],["Áncash","Llamellín"],["Áncash","Chacas"],["Áncash","Chiquián"],["Áncash","Carhuaz"],["Áncash","San Luis"],["Áncash","Casma"],["Áncash","Corongo"],["Áncash","Huari"],["Áncash","Huarmey"],["Áncash","Caraz"],["Áncash","Piscobamba"],["Áncash","Ocros"],["Áncash","Cabana"],["Áncash","Pomabamba"],["Áncash","Recuay"],["Áncash","Chimbote"],["Áncash","Sihuas"],["Áncash","Yungay"],["Apurímac","Abancay"],["Apurímac","Andahuaylas"],["Apurímac","Antabamba"],["Apurímac","Chalhuanca"],["Apurímac","Tambobamba"],["Apurímac","Chincheros"],["Apurímac","Chuquibambilla"],["Arequipa","Arequipa"],["Arequipa","Camaná"],["Arequipa","Caravelí"],["Arequipa","Aplao"],["Arequipa","Chivay"],["Arequipa","Chuquibamba"],["Arequipa","Mollendo"],["Arequipa","Cotahuasi"],["Ayacucho","Ayacucho"],["Ayacucho","Cangallo"],["Ayacucho","Sancos"],["Ayacucho","Huanta"],["Ayacucho","San Miguel"],["Ayacucho","Puquio"],["Ayacucho","Coracora"],["Ayacucho","Pausa"],["Ayacucho","Querobamba"],["Ayacucho","Huancapi"],["Ayacucho","Vilcas Huamán"],["Cajamarca","Cajamarca"],["Cajamarca","Cajabamba"],["Cajamarca","Celendín"],["Cajamarca","Chota"],["Cajamarca","Contumazá"],["Cajamarca","Cutervo"],["Cajamarca","Bambamarca"],["Cajamarca","Jaén"],["Cajamarca","San Ignacio"],["Cajamarca","San Marcos"],["Cajamarca","San Miguel de Pallaques"],["Cajamarca","San Pablo"],["Cajamarca","Santa Cruz"],["Callao","Callao"],["Cusco","Cusco"],["Cusco","Acomayo"],["Cusco","Anta"],["Cusco","Calca"],["Cusco","Yanaoca"],["Cusco","Sicuani"],["Cusco","Santo Tomás"],["Cusco","Yauri"],["Cusco","Quillabamba"],["Cusco","Paruro"],["Cusco","Paucartambo"],["Cusco","Urcos"],["Cusco","Urubamba"],["Huancavelica","Huancavelica"],["Huancavelica","Acobamba"],["Huancavelica","Lircay"],["Huancavelica","Castrovirreyna"],["Huancavelica","Churcampa"],["Huancavelica","Huaytará"],["Huancavelica","Pampas"],["Huánuco","Huánuco"],["Huánuco","Ambo"],["Huánuco","La Unión"],["Huánuco","Huacaybamba"],["Huánuco","Llata"],["Huánuco","Tingo María"],["Huánuco","Huacrachuco"],["Huánuco","Panao"],["Huánuco","Puerto Inca"],["Huánuco","Jesús"],["Huánuco","Chavinillo"],["Ica","Ica"],["Ica","Chincha Alta"],["Ica","Nasca"],["Ica","Palpa"],["Ica","Pisco"],["Junín","Huancayo"],["Junín","Concepción"],["Junín","La Merced"],["Junín","Jauja"],["Junín","Junín"],["Junín","Satipo"],["Junín","Tarma"],["Junín","La Oroya"],["Junín","Chupaca"],["La Libertad","Trujillo"],["La Libertad","Ascope"],["La Libertad","Bolívar"],["La Libertad","Chepén"],["La Libertad","Julcán"],["La Libertad","Otuzco"],["La Libertad","Cascas"],["La Libertad","Pacasmayo"],["La Libertad","Tayabamba"],["La Libertad","Huamachuco"],["La Libertad","Santiago de Chuco"],["La Libertad","Virú"],["Lambayeque","Chiclayo"],["Lambayeque","Ferreñafe"],["Lambayeque","Lambayeque"],["Lima","Lima"],["Lima","Barranca"],["Lima","Cajatambo"],["Lima","Canta"],["Lima","San Vicente de Cañete"],["Lima","Huaral"],["Lima","Matucana"],["Lima","Huacho"],["Lima","Oyón"],["Lima","Yauyos"],["Loreto","Iquitos"],["Loreto","Yurimaguas"],["Loreto","Nauta"],["Loreto","Caballococha"],["Loreto","Requena"],["Loreto","Contamana"],["Loreto","San Lorenzo"],["Loreto","San Antonio del Estrecho"],["Madre de Dios","Puerto Maldonado"],["Madre de Dios","Salvación"],["Madre de Dios","Iñapari"],["Moquegua","Moquegua"],["Moquegua","Omate"],["Moquegua","Ilo"],["Pasco","Cerro de Pasco"],["Pasco","Yanahuanca"],["Pasco","Oxapampa"],["Piura","Piura"],["Piura","Ayabaca"],["Piura","Huancabamba"],["Piura","Chulucanas"],["Piura","Paita"],["Piura","Sullana"],["Piura","Talara"],["Piura","Sechura"],["Puno","Puno"],["Puno","Azángaro"],["Puno","Macusani"],["Puno","Juli"],["Puno","Ilave"],["Puno","Huancané"],["Puno","Lampa"],["Puno","Ayaviri"],["Puno","Moho"],["Puno","Putina"],["Puno","Juliaca"],["Puno","Sandia"],["Puno","Yunguyo"],["San Martín","Moyobamba"],["San Martín","Bellavista"],["San Martín","San José de Sisa"],["San Martín","Saposoa"],["San Martín","Lamas"],["San Martín","Juanjuí"],["San Martín","Picota"],["San Martín","Rioja"],["San Martín","Tarapoto"],["San Martín","Tocache"],["Tacna","Tacna"],["Tacna","Candarave"],["Tacna","Locumba"],["Tacna","Tarata"],["Tumbes","Tumbes"],["Tumbes","Zorritos"],["Tumbes","Zarumilla"],["Ucayali","Pucallpa"],["Ucayali","Atalaya"],["Ucayali","Aguaytía"],["Ucayali","Esperanza"]],"MX":[["Aguascalientes","Aguascalientes"],["Baja California","Mexicali"],["Baja California Sur","La Paz"],["Campeche","San Francisco de Campeche"],["Chiapas","Tuxtla Gutiérrez"],["Chihuahua","Chihuahua"],["Ciudad de México","Ciudad de México"],["Coahuila","Saltillo"],["Colima","Colima"],["Durango","Victoria de Durango"],["Guanajuato","Guanajuato"],["Guerrero","Chilpancingo"],["Hidalgo","Pachuca"],["Jalisco","Guadalajara"],["México","Toluca"],["Michoacán","Morelia"],["Morelos","Cuernavaca"],["Nayarit","Tepic"],["Nuevo León","Monterrey"],["Oaxaca","Oaxaca de Juárez"],["Puebla","Puebla"],["Querétaro","Santiago de Querétaro"],["Quintana Roo","Chetumal"],["San Luis Potosí","San Luis Potosí"],["Sinaloa","Culiacán"],["Sonora","Hermosillo"],["Tabasco","Villahermosa"],["Tamaulipas","Ciudad Victoria"],["Tlaxcala","Tlaxcala"],["Veracruz","Xalapa"],["Yucatán","Mérida"],["Zacatecas","Zacatecas"]],"AR":[["Buenos Aires","La Plata"],["Catamarca","San Fernando del Valle de Catamarca"],["Chaco","Resistencia"],["Chubut","Rawson"],["Ciudad Autónoma de Buenos Aires","Buenos Aires"],["Córdoba","Córdoba"],["Corrientes","Corrientes"],["Entre Ríos","Paraná"],["Formosa","Formosa"],["Jujuy","San Salvador de Jujuy"],["La Pampa","Santa Rosa"],["La Rioja","La Rioja"],["Mendoza","Mendoza"],["Misiones","Posadas"],["Neuquén","Neuquén"],["Río Negro","Viedma"],["Salta","Salta"],["San Juan","San Juan"],["San Luis","San Luis"],["Santa Cruz","Río Gallegos"],["Santa Fe","Santa Fe"],["Santiago del Estero","Santiago del Estero"],["Tierra del Fuego","Ushuaia"],["Tucumán","San Miguel de Tucumán"]],"BR":[["Acre","Río Branco"],["Alagoas","Maceió"],["Amapá","Macapá"],["Amazonas","Manaos"],["Bahía","Salvador"],["Ceará","Fortaleza"],["Distrito Federal","Brasilia"],["Espírito Santo","Vitória"],["Goiás","Goiânia"],["Maranhão","São Luís"],["Mato Grosso","Cuiabá"],["Mato Grosso do Sul","Campo Grande"],["Minas Gerais","Belo Horizonte"],["Pará","Belém"],["Paraíba","João Pessoa"],["Paraná","Curitiba"],["Pernambuco","Recife"],["Piauí","Teresina"],["Río de Janeiro","Río de Janeiro"],["Río Grande do Norte","Natal"],["Río Grande do Sul","Porto Alegre"],["Rondônia","Porto Velho"],["Roraima","Boa Vista"],["Santa Catarina","Florianópolis"],["São Paulo","São Paulo"],["Sergipe","Aracaju"],["Tocantins","Palmas"]],"CO":[["Amazonas","Leticia"],["Antioquia","Medellín"],["Arauca","Arauca"],["Atlántico","Barranquilla"],["Bogotá D.C.","Bogotá"],["Bolívar","Cartagena de Indias"],["Boyacá","Tunja"],["Caldas","Manizales"],["Caquetá","Florencia"],["Casanare","Yopal"],["Cauca","Popayán"],["Cesar","Valledupar"],["Chocó","Quibdó"],["Córdoba","Montería"],["Cundinamarca","Bogotá"],["Guainía","Inírida"],["Guaviare","San José del Guaviare"],["Huila","Neiva"],["La Guajira","Riohacha"],["Magdalena","Santa Marta"],["Meta","Villavicencio"],["Nariño","Pasto"],["Norte de Santander","Cúcuta"],["Putumayo","Mocoa"],["Quindío","Armenia"],["Risaralda","Pereira"],["San Andrés y Providencia","San Andrés"],["Santander","Bucaramanga"],["Sucre","Sincelejo"],["Tolima","Ibagué"],["Valle del Cauca","Cali"],["Vaupés","Mitú"],["Vichada","Puerto Carreño"]],"CL":[["Arica y Parinacota","Arica"],["Tarapacá","Iquique"],["Antofagasta","Antofagasta"],["Atacama","Copiapó"],["Coquimbo","La Serena"],["Valparaíso","Valparaíso"],["Región Metropolitana de Santiago","Santiago"],["Libertador General Bernardo O’Higgins","Rancagua"],["Maule","Talca"],["Ñuble","Chillán"],["Biobío","Concepción"],["La Araucanía","Temuco"],["Los Ríos","Valdivia"],["Los Lagos","Puerto Montt"],["Aysén","Coyhaique"],["Magallanes y de la Antártica Chilena","Punta Arenas"]],"VE":[["Amazonas","Puerto Ayacucho"],["Anzoátegui","Barcelona"],["Apure","San Fernando de Apure"],["Aragua","Maracay"],["Barinas","Barinas"],["Bolívar","Ciudad Bolívar"],["Carabobo","Valencia"],["Cojedes","San Carlos"],["Delta Amacuro","Tucupita"],["Distrito Capital","Caracas"],["Falcón","Coro"],["Guárico","San Juan de los Morros"],["La Guaira","La Guaira"],["Lara","Barquisimeto"],["Mérida","Mérida"],["Miranda","Los Teques"],["Monagas","Maturín"],["Nueva Esparta","La Asunción"],["Portuguesa","Guanare"],["Sucre","Cumaná"],["Táchira","San Cristóbal"],["Trujillo","Trujillo"],["Yaracuy","San Felipe"],["Zulia","Maracaibo"]],"EC":[["Azuay","Cuenca"],["Bolívar","Guaranda"],["Cañar","Azogues"],["Carchi","Tulcán"],["Chimborazo","Riobamba"],["Cotopaxi","Latacunga"],["El Oro","Machala"],["Esmeraldas","Esmeraldas"],["Galápagos","Puerto Baquerizo Moreno"],["Guayas","Guayaquil"],["Imbabura","Ibarra"],["Loja","Loja"],["Los Ríos","Babahoyo"],["Manabí","Portoviejo"],["Morona Santiago","Macas"],["Napo","Tena"],["Orellana","Puerto Francisco de Orellana"],["Pastaza","Puyo"],["Pichincha","Quito"],["Santa Elena","Santa Elena"],["Santo Domingo de los Tsáchilas","Santo Domingo"],["Sucumbíos","Nueva Loja"],["Tungurahua","Ambato"],["Zamora Chinchipe","Zamora"]],"BO":[["Beni","Trinidad"],["Chuquisaca","Sucre"],["Cochabamba","Cochabamba"],["La Paz","La Paz"],["Oruro","Oruro"],["Pando","Cobija"],["Potosí","Potosí"],["Santa Cruz","Santa Cruz de la Sierra"],["Tarija","Tarija"]],"PY":[["Alto Paraguay","Fuerte Olimpo"],["Alto Paraná","Ciudad del Este"],["Amambay","Pedro Juan Caballero"],["Asunción","Asunción"],["Boquerón","Filadelfia"],["Caaguazú","Coronel Oviedo"],["Caazapá","Caazapá"],["Canindeyú","Salto del Guairá"],["Central","Areguá"],["Concepción","Concepción"],["Cordillera","Caacupé"],["Guairá","Villarrica"],["Itapúa","Encarnación"],["Misiones","San Juan Bautista"],["Ñeembucú","Pilar"],["Paraguarí","Paraguarí"],["Presidente Hayes","Villa Hayes"],["San Pedro","San Pedro de Ycuamandiyú"]],"UY":[["Artigas","Artigas"],["Canelones","Canelones"],["Cerro Largo","Melo"],["Colonia","Colonia del Sacramento"],["Durazno","Durazno"],["Flores","Trinidad"],["Florida","Florida"],["Lavalleja","Minas"],["Maldonado","Maldonado"],["Montevideo","Montevideo"],["Paysandú","Paysandú"],["Río Negro","Fray Bentos"],["Rivera","Rivera"],["Rocha","Rocha"],["Salto","Salto"],["San José","San José de Mayo"],["Soriano","Mercedes"],["Tacuarembó","Tacuarembó"],["Treinta y Tres","Treinta y Tres"]],"DO":[["Azua","Azua de Compostela"],["Baoruco","Neiba"],["Barahona","Santa Cruz de Barahona"],["Dajabón","Dajabón"],["Distrito Nacional","Santo Domingo"],["Duarte","San Francisco de Macorís"],["Elías Piña","Comendador"],["El Seibo","Santa Cruz de El Seibo"],["Espaillat","Moca"],["Hato Mayor","Hato Mayor del Rey"],["Hermanas Mirabal","Salcedo"],["Independencia","Jimaní"],["La Altagracia","Salvaleón de Higüey"],["La Romana","La Romana"],["La Vega","La Concepción de La Vega"],["María Trinidad Sánchez","Nagua"],["Monseñor Nouel","Bonao"],["Monte Cristi","San Fernando de Monte Cristi"],["Monte Plata","Monte Plata"],["Pedernales","Pedernales"],["Peravia","Baní"],["Puerto Plata","San Felipe de Puerto Plata"],["Samaná","Santa Bárbara de Samaná"],["San Cristóbal","San Cristóbal"],["San José de Ocoa","San José de Ocoa"],["San Juan","San Juan de la Maguana"],["San Pedro de Macorís","San Pedro de Macorís"],["Sánchez Ramírez","Cotuí"],["Santiago","Santiago de los Caballeros"],["Santiago Rodríguez","Sabaneta"],["Santo Domingo","Santo Domingo Este"],["Valverde","Mao"]],"GT":[["Alta Verapaz","Cobán"],["Baja Verapaz","Salamá"],["Chimaltenango","Chimaltenango"],["Chiquimula","Chiquimula"],["El Progreso","Guastatoya"],["Escuintla","Escuintla"],["Guatemala","Ciudad de Guatemala"],["Huehuetenango","Huehuetenango"],["Izabal","Puerto Barrios"],["Jalapa","Jalapa"],["Jutiapa","Jutiapa"],["Petén","Flores"],["Quetzaltenango","Quetzaltenango"],["Quiché","Santa Cruz del Quiché"],["Retalhuleu","Retalhuleu"],["Sacatepéquez","Antigua Guatemala"],["San Marcos","San Marcos"],["Santa Rosa","Cuilapa"],["Sololá","Sololá"],["Suchitepéquez","Mazatenango"],["Totonicapán","Totonicapán"],["Zacapa","Zacapa"]],"HN":[["Atlántida","La Ceiba"],["Choluteca","Choluteca"],["Colón","Trujillo"],["Comayagua","Comayagua"],["Copán","Santa Rosa de Copán"],["Cortés","San Pedro Sula"],["El Paraíso","Yuscarán"],["Francisco Morazán","Tegucigalpa"],["Gracias a Dios","Puerto Lempira"],["Intibucá","La Esperanza"],["Islas de la Bahía","Roatán"],["La Paz","La Paz"],["Lempira","Gracias"],["Ocotepeque","Ocotepeque"],["Olancho","Juticalpa"],["Santa Bárbara","Santa Bárbara"],["Valle","Nacaome"],["Yoro","Yoro"]],"SV":[["Ahuachapán","Ahuachapán"],["Cabañas","Sensuntepeque"],["Chalatenango","Chalatenango"],["Cuscatlán","Cojutepeque"],["La Libertad","Santa Tecla"],["La Paz","Zacatecoluca"],["La Unión","La Unión"],["Morazán","San Francisco Gotera"],["San Miguel","San Miguel"],["San Salvador","San Salvador"],["San Vicente","San Vicente"],["Santa Ana","Santa Ana"],["Sonsonate","Sonsonate"],["Usulután","Usulután"]],"NI":[["Boaco","Boaco"],["Carazo","Jinotepe"],["Chinandega","Chinandega"],["Chontales","Juigalpa"],["Costa Caribe Norte","Bilwi"],["Costa Caribe Sur","Bluefields"],["Estelí","Estelí"],["Granada","Granada"],["Jinotega","Jinotega"],["León","León"],["Madriz","Somoto"],["Managua","Managua"],["Masaya","Masaya"],["Matagalpa","Matagalpa"],["Nueva Segovia","Ocotal"],["Río San Juan","San Carlos"],["Rivas","Rivas"]],"CR":[["Alajuela","Alajuela"],["Cartago","Cartago"],["Guanacaste","Liberia"],["Heredia","Heredia"],["Limón","Limón"],["Puntarenas","Puntarenas"],["San José","San José"]],"PA":[["Bocas del Toro","Bocas del Toro"],["Chiriquí","David"],["Coclé","Penonomé"],["Colón","Colón"],["Darién","La Palma"],["Herrera","Chitré"],["Los Santos","Las Tablas"],["Panamá","Ciudad de Panamá"],["Panamá Oeste","La Chorrera"],["Veraguas","Santiago de Veraguas"]],"PR":[["Arecibo","Arecibo"],["Mayagüez","Mayagüez"],["Ponce","Ponce"],["San Juan","San Juan"]],"US":[["Alabama","Montgomery"],["Alaska","Juneau"],["Arizona","Phoenix"],["Arkansas","Little Rock"],["California","Sacramento"],["Colorado","Denver"],["Connecticut","Hartford"],["Delaware","Dover"],["District of Columbia","Washington"],["Florida","Tallahassee"],["Georgia","Atlanta"],["Hawaii","Honolulu"],["Idaho","Boise"],["Illinois","Springfield"],["Indiana","Indianapolis"],["Iowa","Des Moines"],["Kansas","Topeka"],["Kentucky","Frankfort"],["Louisiana","Baton Rouge"],["Maine","Augusta"],["Maryland","Annapolis"],["Massachusetts","Boston"],["Michigan","Lansing"],["Minnesota","Saint Paul"],["Mississippi","Jackson"],["Missouri","Jefferson City"],["Montana","Helena"],["Nebraska","Lincoln"],["Nevada","Carson City"],["New Hampshire","Concord"],["New Jersey","Trenton"],["New Mexico","Santa Fe"],["New York","Albany"],["North Carolina","Raleigh"],["North Dakota","Bismarck"],["Ohio","Columbus"],["Oklahoma","Oklahoma City"],["Oregon","Salem"],["Pennsylvania","Harrisburg"],["Rhode Island","Providence"],["South Carolina","Columbia"],["South Dakota","Pierre"],["Tennessee","Nashville"],["Texas","Austin"],["Utah","Salt Lake City"],["Vermont","Montpelier"],["Virginia","Richmond"],["Washington","Olympia"],["West Virginia","Charleston"],["Wisconsin","Madison"],["Wyoming","Cheyenne"]],"CA":[["Alberta","Edmonton"],["British Columbia","Victoria"],["Manitoba","Winnipeg"],["New Brunswick","Fredericton"],["Newfoundland and Labrador","St. John’s"],["Northwest Territories","Yellowknife"],["Nova Scotia","Halifax"],["Nunavut","Iqaluit"],["Ontario","Toronto"],["Ontario","Ottawa"],["Prince Edward Island","Charlottetown"],["Quebec","Quebec City"],["Saskatchewan","Regina"],["Yukon","Whitehorse"]],"BZ":[["Belize","Belize City"],["Cayo","Belmopan"],["Cayo","San Ignacio"],["Corozal","Corozal"],["Orange Walk","Orange Walk Town"],["Stann Creek","Dangriga"],["Toledo","Punta Gorda"]]};
-  const norm=t=>t.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
-  const normq=t=>norm(t).replace(/\s*,\s*/g,', ').replace(/\s+/g,' ').replace(/^\s+|\s+$/g,'');
-  const FILAS=[];
-  for(const cc in DATOS)for(const [e,c] of DATOS[cc]){
-    const ord=PAIS[cc]+', '+e+', '+c;                       // para ordenar alfabéticamente (United States sigue en la U)
-    const label=(cc==='US'?'US':PAIS[cc])+', '+e+', '+c;    // lo que se ve en la lista y en la casilla: Estados Unidos aparece como US
-    const k=[norm(label),norm(ord)];if(ALIAS[cc])k.push(norm(ALIAS[cc]+', '+e+', '+c)); // también se encuentra escribiendo United States o Estados Unidos
-    FILAS.push({cc,e,c,label,ord,k});
-  }
-  window.HH_PAISES=Object.fromEntries(Object.keys(DATOS).map(c=>[c,ALIAS[c]||PAIS[c]])); // países donde se puede publicar (el formulario Publicar los usa)
-  const alfa=(x,y)=>x.ord.localeCompare(y.ord,'es',{sensitivity:'base'});
-  window.HH_UB={FILAS,PAIS,normq,alfa,resaltar,limite}; // el formulario Publicar usa este mismo buscador para su campo Zona
-  // negrita en lo que ya escribió la persona (siempre es el inicio del texto)
-  function resaltar(texto,q){
-    const fr=document.createDocumentFragment(),qn=normq(q);
-    if(qn&&norm(texto).startsWith(qn)){const b=document.createElement('strong');b.textContent=texto.slice(0,qn.length);fr.append(b,texto.slice(qn.length))}
-    else fr.append(texto);
-    return fr;
-  }
-  function pintar(){
-    act=-1;
-    if(!lista.length){msg('No encontramos ese lugar.');return}
-    sug.replaceChildren(...lista.map((f,i)=>{
-      const b=document.createElement('button');
-      b.type='button';b.className='opt';b.dataset.i=i;b.append(resaltar(f.label,qAct));
-      return b;
-    }));
-  }
-  function buscar(){
-    qAct=inp.value;
-    const q=normq(qAct);
-    if(!q){lista=[];sug.hidden=true;return}
-    lista=FILAS.filter(f=>f.k.some(k=>k.startsWith(q))).sort(alfa).slice(0,MAX);
-    sug.hidden=false;
-    pintar();
-  }
-  // al elegir: el mapa va a esa capital (se ubica con el mapa real); si no responde, queda el país
-  // contorno de la capital elegida: se pide el límite (polígono) a Nominatim y se dibuja con el borde en color 2
-  let capaLimite=null;
-  function borrarLimite(){if(capaLimite&&mapa)mapa.removeLayer(capaLimite);capaLimite=null}
-  async function limite(f){
-    try{
-      const lim=new Promise((_,no)=>setTimeout(()=>no(new Error('tiempo')),6000));
-      const r=await Promise.race([fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&polygon_geojson=1&polygon_threshold=0.0005&accept-language=es&countrycodes='+f.cc.toLowerCase()+'&q='+encodeURIComponent(f.c+', '+f.e+', '+PAIS[f.cc])),lim]);
-      if(!r.ok)return null;
-      const g=(await r.json()).find(x=>x.geojson&&/Polygon/.test(x.geojson.type));
-      return g?g.geojson:null;
-    }catch(e){return null}
-  }
-  async function ir(f){
-    const t=++irSeq,[S,W,N,E]=CAJA[f.cc];
-    inp.value=f.label;
-    sug.hidden=true;
-    borrarLimite();const pol=limite(f);
-    let b=L.latLngBounds([[S,W],[N,E]]),max=6;
-    try{
-      const lim=new Promise((_,no)=>setTimeout(()=>no(new Error('tiempo')),4000));
-      const r=await Promise.race([fetch('https://photon.komoot.io/api/?limit=5&bbox=-170,-57,-30,72&q='+encodeURIComponent(f.c+', '+f.e+', '+PAIS[f.cc])),lim]);
-      const g=((await r.json()).features||[]).find(x=>(x.properties.countrycode||'').toUpperCase()===f.cc);
-      if(g){
-        const ex=g.properties.extent,[lng,lat]=g.geometry.coordinates;
-        b=ex?L.latLngBounds([[ex[3],ex[0]],[ex[1],ex[2]]]):L.latLngBounds([[lat,lng],[lat,lng]]);
-        const c=b.getCenter();b.extend([c.lat-.01,c.lng-.01]).extend([c.lat+.01,c.lng+.01]);max=16;
-      }
-    }catch(e){}
-    if(t!==irSeq)return;
-    estado.zona=b;estado.zonaNombre=f.c;
-    if(mapa)mapa.fitBounds(b,{padding:[30,30],maxZoom:max});
-    render();
-    // cuando llega el límite de la capital: se dibuja su borde y el mapa lo encuadra completo (si no llega, queda como antes)
-    const gj=await pol;
-    if(t!==irSeq||!gj||!mapa)return;
-    borrarLimite();
-    capaLimite=L.geoJSON(gj,{interactive:false,style:{color:'#14eb4a',weight:3,opacity:1,lineJoin:'round',fillColor:'#14eb4a',fillOpacity:.1}}).addTo(mapa);
-    const pb=capaLimite.getBounds();
-    if(pb.isValid()){estado.zona=pb;mapa.fitBounds(pb,{padding:[30,30],maxZoom:16});render()}
-  }
-  function mover(d){
-    const o=[...sug.querySelectorAll('.opt')];
-    if(!o.length)return;
-    if(act>=0)o[act].classList.remove('on');
-    act=(act+d+o.length)%o.length;
-    o[act].classList.add('on');o[act].scrollIntoView({block:'nearest'});
-  }
-  inp.addEventListener('keydown',e=>{
-    if(e.key==='Enter'){
-      e.preventDefault();
-      if(act>=0&&lista[act])ir(lista[act]);else if(lista.length&&!sug.hidden)ir(lista[0]);else buscar();
-    }else if(e.key==='ArrowDown'){e.preventDefault();if(sug.hidden&&lista.length)sug.hidden=false;else mover(1)}
-    else if(e.key==='ArrowUp'){e.preventDefault();mover(-1)}
-    else if(e.key==='Escape')sug.hidden=true;
+/* ---------- Metas ---------- */
+function saveGoals(){store.set('goals2',goals)}
+function stats(){
+  const filled=goals.filter(g=>g.text.trim());
+  const done=filled.filter(g=>g.done).length;
+  $('s1').textContent=fmtMin(tot);
+  $('s2').textContent=done+'/'+filled.length;
+  $('s3').textContent=(filled.length?Math.round(done/filled.length*100):0)+'%';
+}
+function renderGoals(focusLast){
+  const ul=$('list');ul.innerHTML='';
+  goals.forEach((g,i)=>{
+    const li=document.createElement('li');if(g.done)li.className='done';
+    const cb=document.createElement('input');cb.type='checkbox';cb.checked=g.done;
+    const tx=document.createElement('input');tx.type='text';tx.className='g';tx.maxLength=120;
+    tx.placeholder='Escribe una meta…';tx.value=g.text;
+    cb.onchange=()=>{
+      if(!g.text.trim()){cb.checked=false;tx.focus();return}
+      g.done=cb.checked;li.classList.toggle('done',g.done);saveGoals();stats();
+    };
+    tx.oninput=()=>{g.text=tx.value;if(!g.text.trim()&&g.done){g.done=false;cb.checked=false;li.classList.remove('done')}saveGoals();stats()};
+    tx.onkeydown=e=>{if(e.key==='Enter'){goals.push({text:'',done:false});saveGoals();renderGoals(true)}};
+    const x=document.createElement('button');x.textContent='×';x.setAttribute('aria-label','Eliminar meta');
+    x.onclick=()=>{goals.splice(i,1);if(!goals.length)goals.push({text:'',done:false});saveGoals();renderGoals()};
+    li.append(cb,tx,x);ul.appendChild(li);
   });
-  inp.addEventListener('input',()=>{
-    if(inp.value.trim()){buscar();return}   // sugiere mientras se escribe, al instante
-    lista=[];sug.hidden=true;irSeq++;borrarLimite();
-    if(estado.zona){estado.zona=null;estado.zonaNombre='';if(mapa)mapa.fitBounds(LATAM);render()} // al borrar el texto se quita la zona
-  });
-  inp.addEventListener('focus',()=>{if(lista.length&&inp.value.trim()){sug.hidden=false}});
-  inp.nextElementSibling.addEventListener('click',()=>{if(lista.length)ir(lista[0]);else buscar()});
-  sug.addEventListener('click',e=>{const b=e.target.closest('.opt');if(b)ir(lista[+b.dataset.i])});
-  document.addEventListener('click',e=>{if(!e.target.closest('#ubi,#sug,#ubi+svg'))sug.hidden=true});
-})();
-/* Ver mapa / Ver listado: el mapa ocupa todo el ancho y se ven los precios donde está cada propiedad */
-(function(){
-  const lay=$('.layout'),vm=$('#vm'),t=$('#vmt');
-  // el logo (icono + Hogar Hogareña) lleva al inicio: sale del mapa grande y sube al principio
-  $('.logo').addEventListener('click',e=>{
-    e.preventDefault();
-    if(lay.classList.contains('mg'))vm.click();
-    scrollTo({top:0,behavior:'smooth'});
-  });
-  vm.addEventListener('click',()=>{
-    const g=lay.classList.toggle('mg');
-    document.documentElement.classList.toggle('mg-on',g);
-    t.textContent=g?'Ver listado':'Ver mapa';vm.setAttribute('aria-pressed',g);
-    if(mapa)setTimeout(()=>{mapa.invalidateSize();mapa.fitBounds(estado.zona||LATAM,{animate:false});pintar(visibles)},60);
-    mostrarSel(false);
-    scrollTo({top:0,behavior:'smooth'}); // al entrar o salir de Ver mapa la página siempre queda arriba del todo
-  });
-})();
-// favoritos: funciona en la tarjeta de arriba y en las de abajo
-document.addEventListener('click',e=>{const h=e.target.closest('.heart');if(!h)return;
-  const id=+h.closest('.card').dataset.pid;fav.has(id)?fav.delete(id):fav.add(id);
-  document.querySelectorAll(`.card[data-pid="${id}"] .heart`).forEach(x=>x.setAttribute('aria-pressed',fav.has(id)))});
-// al pasar por una tarjeta de la lista se resalta su pin en el mapa
-$('#list').addEventListener('pointerover',e=>{const c=e.target.closest('.card');if(c&&!(e.relatedTarget&&c.contains(e.relatedTarget)))resaltar(c.dataset.id,true)});
-$('#list').addEventListener('pointerout',e=>{const c=e.target.closest('.card');if(c&&!(e.relatedTarget&&c.contains(e.relatedTarget)))resaltar(c.dataset.id,false)});
-/* Publicar: formulario -> fotos a Supabase Storage + fila "pendiente" en la tabla propiedades (tú la apruebas) */
-(function(){
-  const dlg=$('#dlg'),f=$('#pf'),msg=$('#pf-msg'),send=$('#pf-send'),file=$('#pf-file'),caja=$('#pf-fotos');
-  let fotos=[]; // {blob,url}
-  const MAX=3;
-  // todos los países de América en orden alfabético; Perú (+51) viene elegido
-  const PAISES=[['Argentina','54'],['Belice','501'],['Bolivia','591'],['Brasil','55'],['Canada','1'],['Chile','56'],['Colombia','57'],
-    ['Costa Rica','506'],['Ecuador','593'],['El Salvador','503'],['USA','1'],['Guatemala','502'],
-    ['Honduras','504'],['México','52'],['Nicaragua','505'],['Panamá','507'],['Paraguay','595'],['Perú','51'],['Puerto Rico','1'],['República Dominicana','1'],
-    ['Uruguay','598'],['Venezuela','58']].sort((a,b)=>a[0].localeCompare(b[0],'es'));
-  const LONG={'1':[10,10],'51':[9,9],'52':[10,10],'54':[10,11],'55':[10,11],'56':[9,9],'57':[10,10],'58':[10,10],'501':[7,7],'502':[8,8],'503':[8,8],'504':[8,8],'505':[8,8],'506':[8,8],'507':[7,8],'591':[8,8],'593':[9,9],'595':[9,9],'598':[8,9]}; // dígitos del número local de cada país (sin el código)
-  f.elements.pais.innerHTML=PAISES.map(([n,c])=>`<option value="${c}"${n==='Perú'?' selected':''}>${n} +${c}</option>`).join('');
-  // máscara: mientras se escribe, el monto se separa con comas cada 3 dígitos (1,000) y el teléfono con espacios (903 307 861)
-  function masc(el,sep,max){
-    el.addEventListener('beforeinput',e=>{if(e.data&&/[^\d, ]/.test(e.data))e.preventDefault()});
-    el.addEventListener('input',()=>{
-      const pos=el.selectionStart,antes=el.value.slice(0,pos).replace(/\D/g,'').length;
-      const d=el.value.replace(/\D/g,'').slice(0,typeof max==='function'?max():max);
-      const out=sep===','?d.replace(/\B(?=(\d{3})+(?!\d))/g,','):d.replace(/(\d{3})(?=\d)/g,'$1 ');
-      el.value=out;
-      let c=0,n=0;while(c<out.length&&n<antes){if(/\d/.test(out[c]))n++;c++}
-      try{el.setSelectionRange(c,c)}catch(_){}
-    });
-  }
-  masc(f.elements.precio,',',9);
-  masc(f.elements.tel,' ',()=>(LONG[f.elements.pais.value]||[7,11])[1]); // no deja escribir más dígitos de los que usa el país elegido
-  f.elements.pais.addEventListener('change',()=>f.elements.tel.dispatchEvent(new Event('input')));
-  // tipos: con Proyecto solo Departamento, Casa, Terreno y Oficina
-  const TIPOS=['Departamento','Casa','Terreno','Oficina','Local comercial','Local industrial','Cochera'];
-  function pintarTipos(){
-    const s=f.elements.tipo,act=s.value,l=f.elements.op.value==='proyecto'?PROY:TIPOS;
-    s.innerHTML=l.map(t=>`<option value="${t}">${t}</option>`).join('');
-    if(l.includes(act))s.value=act;
-  }
-  f.querySelectorAll('input[name="op"]').forEach(r=>r.addEventListener('change',pintarTipos));
-  pintarTipos();
-  const say=t=>{msg.textContent=t};
-  // Turnstile (Cloudflare): prueba de que quien envía es una persona. La función de Supabase la verifica; el token sirve una sola vez.
-  let tsId=null,tsToken=null;
-  const montarTS=(n=0)=>{
-    if(tsId!==null||TS_SITEKEY.startsWith('PEGA'))return;
-    if(!window.turnstile){if(n<50)setTimeout(()=>montarTS(n+1),200);return}
-    tsId=turnstile.render('#pf-ts',{sitekey:TS_SITEKEY,theme:'dark',language:'es',appearance:'always',
-      callback:t=>{tsToken=t;say('')},'expired-callback':()=>{tsToken=null},'error-callback':c=>{tsToken=null;console.warn('Turnstile error',c);say('Cloudflare no pudo verificar (código '+c+'). Recarga la página e inténtalo de nuevo.')}});
-  };
-  const nuevoTS=()=>{tsToken=null;if(tsId!==null&&window.turnstile)turnstile.reset(tsId)};
-  const esperarTS=async()=>{for(let i=0;i<75&&!tsToken;i++)await new Promise(r=>setTimeout(r,200));return tsToken};
-  $('#pub').addEventListener('click',()=>{say('');dlg.showModal();montarTS()});
-  $('#pf-x').addEventListener('click',()=>dlg.close());
-  dlg.addEventListener('click',e=>{if(e.target===dlg)dlg.close()}); // clic en el fondo oscuro
-  f.querySelectorAll('.dig').forEach(el=>{
-    el.addEventListener('beforeinput',e=>{if(e.data&&/\D/.test(e.data))e.preventDefault()});
-    el.addEventListener('input',()=>{el.value=el.value.replace(/\D/g,'')});
-  });
-  // fotos: se reducen a 1280 px y JPG antes de subir; si aún pesan más de 500 KB se baja la calidad y luego el tamaño (el bucket de Supabase solo acepta hasta 500 KB, ver supabase-completo.sql)
-  const MAX_ORIG=15*1024*1024, MAX_SUBIDA=500*1024;
-  async function comprimir(file){
-    if(file.size>MAX_ORIG)throw new Error('grande');
-    const bmp=await createImageBitmap(file);
-    let k=Math.min(1,1280/Math.max(bmp.width,bmp.height));
-    for(let vuelta=0;vuelta<4;vuelta++){
-      const c=document.createElement('canvas');c.width=Math.max(1,Math.round(bmp.width*k));c.height=Math.max(1,Math.round(bmp.height*k));
-      const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);g.drawImage(bmp,0,0,c.width,c.height); // fondo blanco: los PNG con transparencia no salen negros
-      for(const q of [.82,.7,.6,.5]){
-        const b=await new Promise(ok=>c.toBlob(ok,'image/jpeg',q));
-        if(b&&b.size<=MAX_SUBIDA)return b;
-      }
-      k*=.75;
-    }
-    throw new Error('pesada');
-  }
-  // 3 casillas fijas: la primera es la portada
-  function pintarFotos(){
-    caja.replaceChildren();
-    for(let i=0;i<MAX;i++){
-      const s=document.createElement('div');s.className='pf-s';
-      const x=fotos[i];
-      if(x){
-        const d=document.createElement('div');d.className='pf-th';
-        const im=document.createElement('img');im.src=x.url;im.alt='Foto '+(i+1);
-        const b=document.createElement('button');b.type='button';b.textContent='×';b.setAttribute('aria-label','Quitar foto '+(i+1));
-        b.addEventListener('click',()=>{URL.revokeObjectURL(x.url);fotos.splice(i,1);pintarFotos()});
-        d.append(im,b);s.append(d);
-      }else{
-        const a=document.createElement('button');a.type='button';a.className='pf-add';a.textContent='+';a.setAttribute('aria-label','Agregar foto '+(i+1));
-        a.addEventListener('click',()=>file.click());s.append(a);
-      }
-      const c=document.createElement('span');c.textContent=i===0?'Portada':'Foto '+(i+1);s.append(c);
-      caja.append(s);
-    }
-  }
-  file.addEventListener('change',async()=>{
-    const nuevas=[...file.files].filter(x=>x.type==='image/jpeg').slice(0,MAX-fotos.length);
-    file.value='';
-    for(const x of nuevas){
-      try{const b=await comprimir(x);fotos.push({blob:b,url:URL.createObjectURL(b)})}
-      catch(e){say(e.message==='grande'?'Una foto pesa más de 15 MB. Elige otra más liviana.':'No se pudo leer una de las fotos. Prueba con otra foto en JPG.')}
-    }
-    pintarFotos();
-  });
-  pintarFotos();
-  /* Ubicación y lugar en el mapa. Primero se elige la UBICACIÓN con el mismo buscador de Ubicación de arriba (País, Estado, Ciudad; viene de HH_UB)
-     y el teléfono cambia solo al código de ese país. Luego aparece el mapa (el mismo de la página, sin nada publicado, encuadrado en esa ubicación):
-     se toca el lugar de la propiedad, solo dentro de la ubicación elegida (su borde si lo hay; si no, su caja). No hay casilla de dirección:
-     al enviar, el texto de la dirección sale de la calle más cercana a ese punto (Nominatim). */
-  const cajaMapa=$('#pf-mapa-box'),vacio=$('#pf-mapa-vacio'),zonaI=f.elements.zona,sugZ=$('#pf-zsug'),UB=window.HH_UB;
-  let zsel=null,listaZ=[],seqZ=0,mm=null,marcador=null,capaZ=null,punto=null;
-  // nombre con el que cada país aparece en el selector del teléfono
-  const NOMTEL={AR:'Argentina',BZ:'Belice',BO:'Bolivia',BR:'Brasil',CA:'Canada',CL:'Chile',CO:'Colombia',CR:'Costa Rica',EC:'Ecuador',SV:'El Salvador',US:'USA',GT:'Guatemala',HN:'Honduras',MX:'México',NI:'Nicaragua',PA:'Panamá',PY:'Paraguay',PE:'Perú',PR:'Puerto Rico',DO:'República Dominicana',UY:'Uruguay',VE:'Venezuela'};
-  const mensaje=t=>{const m=document.createElement('p');m.className='msg';m.textContent=t;return m};
-  // ¿el punto (x=lng, y=lat) cae dentro del borde de la ubicación? (polígono o multipolígono GeoJSON, con huecos)
-  const enAnillo=(x,y,r)=>{let d=false;for(let i=0,j=r.length-1;i<r.length;j=i++){const [xi,yi]=r[i],[xj,yj]=r[j];if((yi>y)!==(yj>y)&&x<(xj-xi)*(y-yi)/(yj-yi)+xi)d=!d}return d};
-  const enPol=(x,y,p)=>enAnillo(x,y,p[0])&&!p.slice(1).some(h=>enAnillo(x,y,h));
-  const enBorde=(x,y,g)=>g.type==='Polygon'?enPol(x,y,g.coordinates):g.coordinates.some(p=>enPol(x,y,p));
-  const cajaDe=g=>{let a=[180,90,-180,-90];(function rec(c){if(typeof c[0]==='number')a=[Math.min(a[0],c[0]),Math.min(a[1],c[1]),Math.max(a[2],c[0]),Math.max(a[3],c[1])];else c.forEach(rec)})(g.coordinates);return a}; // [oeste,sur,este,norte]
-  // UBICACIÓN: sugerencias del buscador de Ubicación
-  function pintarZ(q){
-    sugZ.hidden=false;
-    if(!listaZ.length){sugZ.replaceChildren(mensaje('No encontramos ese lugar.'));return}
-    sugZ.replaceChildren(...listaZ.map((r,i)=>{const b=document.createElement('button');b.type='button';b.className='opt';b.dataset.i=i;b.append(UB.resaltar(r.label,q));return b}));
-  }
-  function buscarZ(){
-    const q=zonaI.value,qn=UB.normq(q);
-    if(!qn){listaZ=[];sugZ.hidden=true;return}
-    listaZ=UB.FILAS.filter(r=>r.k.some(k=>k.startsWith(qn))).sort(UB.alfa).slice(0,5);
-    pintarZ(q);
-  }
-  // MAPA: aparece al elegir la ubicación, encuadrado en ella y con su borde dibujado
-  function ocultarMapa(){
-    punto=null;
-    if(mm){if(marcador)mm.removeLayer(marcador);if(capaZ)mm.removeLayer(capaZ)}
-    marcador=null;capaZ=null;vacio.hidden=false;
-  }
-  function mostrarMapa(z){
-    vacio.hidden=true;
-    if(!window.L)return;
-    const [w,s,e,n]=z.caja,b=L.latLngBounds([[s,w],[n,e]]);
-    if(!mm){
-      mm=L.map('pf-mapa',{zoomSnap:.5,minZoom:3,maxZoom:19,scrollWheelZoom:false,zoomControl:false,maxBoundsViscosity:1});
-      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,noWrap:true,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'}).addTo(mm);
-      L.control.zoom({position:'bottomright',zoomInTitle:'Acercar',zoomOutTitle:'Alejar'}).addTo(mm);
-      mm.on('click',ev=>marcar(ev.latlng));
-    }
-    mm.setMaxBounds(null);
-    if(z.gj)capaZ=L.geoJSON(z.gj,{interactive:false,style:{color:'#14eb4a',weight:3,opacity:1,lineJoin:'round',fillColor:'#14eb4a',fillOpacity:.1}}).addTo(mm);
-    setTimeout(()=>{mm.invalidateSize();mm.fitBounds(b,{animate:false,padding:[10,10],maxZoom:16});mm.setMaxBounds(b.pad(.5))},0);
-  }
-  function marcar(ll){
-    const z=zsel;if(!z)return;
-    const [w,s,e,n]=z.caja,dentro=z.gj?enBorde(ll.lng,ll.lat,z.gj):(ll.lng>=w&&ll.lng<=e&&ll.lat>=s&&ll.lat<=n);
-    if(!dentro){say('Marca un lugar dentro de la ubicación elegida.');return}
-    say('');punto={lat:ll.lat,lng:ll.lng};
-    if(marcador)marcador.setLatLng(ll);
-    else marcador=L.marker(ll,{keyboard:false,icon:L.divIcon({className:'pinwrap',iconSize:[0,0],html:'<span class="pin sel">Tu propiedad</span>'})}).addTo(mm);
-  }
-  async function elegirZona(r){
-    const t=++seqZ;
-    zsel=null;ocultarMapa();
-    zonaI.value=r.label.slice(0,80);sugZ.hidden=true;say('');
-    const i=PAISES.findIndex(x=>x[0]===NOMTEL[r.cc]);    // el teléfono pasa al código del país elegido (se puede cambiar a mano)
-    if(i>=0){f.elements.pais.selectedIndex=i;f.elements.pais.dispatchEvent(new Event('change'))}
-    const pol=UB.limite(r);                               // borde de la capital (el mismo que usa Ubicación)
-    let caja=null,cen=null;
-    try{                                                  // plan B: la caja que da Photon para esa ciudad
-      const c=new AbortController(),to=setTimeout(()=>c.abort(),4000);
-      const x=await fetch('https://photon.komoot.io/api/?limit=5&bbox=-170,-57,-30,72&q='+encodeURIComponent(r.c+', '+r.e+', '+UB.PAIS[r.cc]),{signal:c.signal});
-      clearTimeout(to);
-      const g=((await x.json()).features||[]).find(y=>(y.properties.countrycode||'').toUpperCase()===r.cc);
-      if(g){const ex=g.properties.extent,[lng,lat]=g.geometry.coordinates;cen=[lat,lng];caja=ex?[ex[0],ex[3],ex[2],ex[1]]:[lng-.05,lat-.05,lng+.05,lat+.05]}
-    }catch(_){}
-    const gj=await pol;
-    if(t!==seqZ)return;                                   // cambió la ubicación mientras se ubicaba
-    if(gj){caja=cajaDe(gj);cen=[(caja[1]+caja[3])/2,(caja[0]+caja[2])/2]}
-    if(!caja){say('No pudimos ubicar ese lugar ahora. Vuelve a elegirlo en un momento.');return}
-    zsel={cc:r.cc,c:r.c,caja,cen,gj};
-    mostrarMapa(zsel);
-  }
-  function limpiarZona(){zsel=null;seqZ++;listaZ=[];sugZ.hidden=true;zonaI.value='';ocultarMapa()}
-  // texto de la dirección: la calle más cercana al punto marcado (Nominatim); si no responde, un texto genérico con la ciudad
-  async function nombreDe(pt,z){
-    try{
-      const c=new AbortController(),to=setTimeout(()=>c.abort(),5000);
-      const r=await fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=18&accept-language=es&lat='+pt.lat+'&lon='+pt.lng,{signal:c.signal});
-      clearTimeout(to);
-      if(r.ok){
-        const a=(await r.json()).address||{},via=a.road||a.pedestrian||a.footway||a.path||'';
-        const txt=[(via+' '+(a.house_number||'')).trim(),a.neighbourhood||a.suburb||a.city_district||''].filter(Boolean).join(', ');
-        if(txt.length>=5)return txt.slice(0,120);
-      }
-    }catch(_){}
-    return ('Ubicación marcada en el mapa, '+z.c).slice(0,120);
-  }
-  zonaI.addEventListener('input',()=>{
-    zsel=null;seqZ++;ocultarMapa();                      // si cambia el texto de la ubicación hay que elegirla otra vez
-    buscarZ();
-  });
-  zonaI.addEventListener('keydown',e=>{
-    if(e.key==='Escape'&&!sugZ.hidden){e.preventDefault();sugZ.hidden=true}
-    else if(e.key==='Enter'){e.preventDefault();if(!zsel&&!sugZ.hidden&&listaZ.length)elegirZona(listaZ[0])}
-  });
-  zonaI.addEventListener('focus',()=>{if(!zsel&&listaZ.length&&zonaI.value.trim())sugZ.hidden=false});
-  sugZ.addEventListener('click',e=>{const b=e.target.closest('.opt');if(b&&listaZ[+b.dataset.i])elegirZona(listaZ[+b.dataset.i])});
-  document.addEventListener('click',e=>{
-    if(!e.target.closest('#pf-zsug,[name="zona"]'))sugZ.hidden=true;
-  });
-  f.addEventListener('submit',async e=>{
-    e.preventDefault();
-    const v=n=>f.elements[n].value.trim();
-    if(v('web'))return;                                   // campo trampa: solo lo llenan los robots
-    const bad=(n,t)=>{say(t);f.elements[n].focus();return true};
-    const precio=+v('precio').replace(/\D/g,''),m2=+v('m2'),zona=v('zona');
-    const cod=f.elements.pais.value,lim=LONG[cod]||[7,11],loc0=v('tel').replace(/\D/g,'').replace(/^0+/,''),loc=(cod==='54'&&loc0.length===11&&loc0[0]==='9')?loc0.slice(1):loc0,tel=cod+loc;
-    if(!(precio>0))return bad('precio','Escribe el precio.');
-    if(!(m2>0))return bad('m2','Escribe la superficie en m².');
-    if(!zsel)return bad('zona','Elige la ubicación de la lista que aparece al escribir.');
-    if(!punto){say('Toca en el mapa el lugar de tu propiedad.');cajaMapa.scrollIntoView({block:'center'});return}
-    if(cod==='54'?loc.length!==10:(loc.length<lim[0]||loc.length>lim[1]))return bad('tel',cod==='54'?'Argentina usa 10 dígitos, sin el 9.':'Ese país usa '+(lim[0]===lim[1]?lim[0]:lim[0]+' u '+lim[1])+' dígitos.');
-    if(fotos.length<MAX){say('Agrega las 3 fotos.');const a=caja.querySelector('.pf-add');if(a)a.focus();return}
-    if(!SB_URL||!SB_KEY){say('El envío aún no está conectado: falta pegar SB_URL y SB_KEY en el código (nota 9).');return}
-    if(TS_SITEKEY.startsWith('PEGA')){say('Falta pegar la Site Key de Turnstile en el código (nota 13).');return}
-    try{ if(Date.now()-(+localStorage.getItem('hh_ult')||0)<60000){say('Espera un minuto antes de enviar otro anuncio.');return} }catch(_){}
-    send.disabled=true;
-    try{
-      const z=zsel,pt=punto;say('Preparando el anuncio…');const dir=await nombreDe(pt,z);const pos={lat:pt.lat,lng:pt.lng,cc:z.cc}; // punto tocado en el mapa; dir = calle más cercana
-      if(window.HH_PAISES&&!HH_PAISES[pos.cc]){say('Por ahora solo se puede publicar en: '+Object.values(HH_PAISES).sort((x,y)=>x.localeCompare(y,'es')).join(', ')+'. Revisa la zona o escribe el país.');send.disabled=false;return}
-      say('Verificando…');
-      const token=await esperarTS();
-      if(!token){say('No pudimos verificar que eres una persona. Recarga la página e inténtalo de nuevo.');nuevoTS();send.disabled=false;return}
-      say('Enviando anuncio y fotos…');
-      const fd=new FormData();
-      fd.append('token',token);
-      fd.append('web',v('web'));
-      fd.append('datos',JSON.stringify({op:f.elements.op.value,tipo:v('tipo'),precio,mon:f.elements.mon.value,m2,
-        dorm:+v('dorm')||0,ban:+v('ban')||0,est:+v('est')||0,dir,zona,descr:v('descr'),tel,lat:pos.lat,lng:pos.lng}));
-      fotos.forEach((x,i)=>fd.append('foto'+(i+1),x.blob,(i+1)+'.jpg'));
-      const r=await fetch(FN_URL,{method:'POST',headers:sbH(),body:fd});
-      nuevoTS(); // el token se usa una sola vez
-      if(!r.ok){
-        const j=await r.json().catch(()=>({}));
-        if(j.error==='captcha'){say('No pudimos verificar que eres una persona. Inténtalo de nuevo.');send.disabled=false;return}
-        if(j.error==='pais'){say('Esa dirección no está en un país donde se puede publicar.');send.disabled=false;return}
-        throw new Error('funcion '+r.status+' '+(j.error||''));
-      }
-      try{localStorage.setItem('hh_ult',String(Date.now()))}catch(_){}
-      f.reset();limpiarZona();pintarTipos();fotos.forEach(x=>URL.revokeObjectURL(x.url));fotos=[];pintarFotos();
-      say('¡Listo! Recibimos tu anuncio. Se mostrará cuando lo aprobemos.');
-    }catch(err){console.error(err);say('No se pudo enviar. Revisa tu conexión e inténtalo de nuevo.')}
-    send.disabled=false;
-  });
-})();
-/* galería de las tarjetas: flechas < > y 3 puntos para ver las 3 fotos */
-(function(){
-  const idx=t=>Math.round(t.scrollLeft/Math.max(1,t.clientWidth));
-  function marcar(t){const i=idx(t);t.closest('.pic').querySelectorAll('.dot').forEach((d,k)=>d.setAttribute('aria-current',k===i))}
-  function ir(t,i){const n=t.children.length;t.scrollTo({left:((i%n)+n)%n*t.clientWidth,behavior:'smooth'})}
-  document.addEventListener('click',e=>{
-    const b=e.target.closest('.pn,.dot');if(!b)return;
-    const pic=b.closest('.pic'),t=pic.querySelector('.pics');
-    if(b.classList.contains('dot'))ir(t,[...pic.querySelectorAll('.dot')].indexOf(b));
-    else ir(t,idx(t)+(b.classList.contains('next')?1:-1));
-  });
-  document.addEventListener('scroll',e=>{const t=e.target;if(t.classList&&t.classList.contains('pics'))marcar(t)},true);
-})();
-/* tecla 1: pone toda la página en pantalla completa (modo F11) y, al pulsarla otra vez, sale.
-   Solo funciona cuando no hay nada abierto: ni un desplegable (Alquilar, Departamento, Precio, Más filtros, Ordenar), ni las sugerencias de Ubicación,
-   ni la ventana Publicar, ni se está escribiendo en una casilla. Esc también sale de la pantalla completa (lo hace el navegador). */
-document.addEventListener('keydown',e=>{
-  if(e.key!=='1'||e.repeat||e.ctrlKey||e.metaKey||e.altKey||e.shiftKey||e.defaultPrevented)return;
-  const a=document.activeElement;
-  if(a&&(/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)||a.isContentEditable))return; // escribiendo
-  if(document.querySelector('.dd.open'))return;                                  // un filtro o Ordenar abierto
-  if(!$('#sug').hidden)return;                                                   // sugerencias de Ubicación abiertas
-  if($('#dlg').open)return;                                                      // ventana Publicar abierta
-  e.preventDefault();
-  const el=document.documentElement;
-  if(document.fullscreenElement)document.exitFullscreen&&document.exitFullscreen();
-  else if(el.requestFullscreen)el.requestFullscreen().catch(()=>{});
-});
+  stats();
+  if(focusLast){const all=ul.querySelectorAll('input.g');all[all.length-1].focus()}
+}
+$('na').onclick=()=>{goals.push({text:'',done:false});saveGoals();renderGoals(true)};
+
+/* ---------- Notas y datos ---------- */
+$('notes').oninput=e=>store.set('notes2',e.target.value);
+$('cl').onclick=()=>{if(confirm('¿Reiniciar el tiempo total a 0?')){tot=0;store.set('tot2',0);stats()}};
+
+/* ---------- Inicio ---------- */
+setSync(st.sync);applyColor();clock();left=total('w');draw();renderGoals();
 </script>
 </body>
 </html>
