@@ -70,7 +70,10 @@ textarea::placeholder{color:var(--dim)}
 .vl{font-size:.8rem;color:var(--dim)}
 .vn{font-size:2.6rem;font-weight:700;line-height:1.1}
 #vol{width:100%;accent-color:var(--c);margin:10px 0}
-#vt{width:100%}
+#vt,#vx{width:100%;height:46px;padding:0 16px;font-size:1rem;line-height:1;font-weight:400;display:flex;align-items:center}
+#vt{justify-content:flex-start}
+#vx{margin-top:8px;justify-content:space-between}
+#vs{font-variant-numeric:tabular-nums}
 @media(max-width:899px){main{padding-top:110px}}
 #gm{width:100%;margin-bottom:12px}
 .sw{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
@@ -89,6 +92,7 @@ textarea::placeholder{color:var(--dim)}
     <div class="vn" id="vv">5</div>
     <input type="range" id="vol" min="1" max="10" step="1">
     <button id="vt">▶ Probar sonido</button>
+    <button id="vx"><span>⏸ Pausar</span><span id="vs">20</span></button>
   </div>
   <div id="pan">
     <button id="gm">🎮 Modo gamer</button>
@@ -203,8 +207,9 @@ $('gm').onclick=()=>{st.gamer=!st.gamer;applyColor();save()};
 $('pb').onclick=()=>{$('vp').classList.remove('open');$('pan').classList.toggle('open')};
 $('sb').onclick=()=>{$('pan').classList.remove('open');$('vp').classList.toggle('open')};
 $('vol').value=st.vol;$('vv').textContent=st.vol;
-$('vol').oninput=()=>{st.vol=+$('vol').value;$('vv').textContent=st.vol;save()};
+$('vol').oninput=()=>{st.vol=+$('vol').value;$('vv').textContent=st.vol;save();if(alMaster)alMaster.gain.value=st.vol*0.04};
 $('vt').onclick=()=>beep();
+$('vx').onclick=()=>stopAlarm();
 
 /* ---------- Utilidades de tiempo ---------- */
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v||0));
@@ -238,13 +243,23 @@ function setMode(m){
   mode=m;$('mw').classList.toggle('on',m==='w');$('mr').classList.toggle('on',m==='r');
   left=total(m);if(running)end=Date.now()+left*1000;draw();
 }
-/* Sonido de temporizador: 3 ráfagas de 4 pitidos cortos */
+/* Sonido de temporizador: ráfagas de 4 pitidos cortos durante 20 segundos */
+const ALARM_SECS=20;
+let alCtx=null,alMaster=null,alTimer=null;
+function stopAlarm(){
+  clearInterval(alTimer);alTimer=null;alMaster=null;
+  if(alCtx){try{alCtx.close()}catch(e){}alCtx=null}
+  $('vs').textContent=ALARM_SECS;
+}
 function beep(){
+  stopAlarm();
   try{
-    const a=new (window.AudioContext||window.webkitAudioContext)();
-    const master=a.createGain();master.gain.value=st.vol*0.04;master.connect(a.destination);
-    for(let b=0;b<3;b++)for(let i=0;i<4;i++){
-      const t=a.currentTime+b*0.9+i*0.14;
+    const a=new (window.AudioContext||window.webkitAudioContext)();alCtx=a;
+    const master=a.createGain();master.gain.value=st.vol*0.04;master.connect(a.destination);alMaster=master;
+    const t0=a.currentTime;
+    for(let b=0;b*0.9<ALARM_SECS;b++)for(let i=0;i<4;i++){
+      const t=t0+b*0.9+i*0.14;
+      if(t-t0>=ALARM_SECS)break;
       const o=a.createOscillator(),g=a.createGain();
       o.type='square';o.frequency.value=2000;o.connect(g);g.connect(master);
       g.gain.setValueAtTime(0.0001,t);
@@ -253,7 +268,12 @@ function beep(){
       g.gain.exponentialRampToValueAtTime(0.0001,t+0.078);
       o.start(t);o.stop(t+0.08);
     }
-    setTimeout(()=>a.close(),3500);
+    const endAt=Date.now()+ALARM_SECS*1000;
+    $('vs').textContent=ALARM_SECS;
+    alTimer=setInterval(()=>{
+      const r=Math.ceil((endAt-Date.now())/1000);
+      if(r<=0)stopAlarm();else $('vs').textContent=r;
+    },250);
   }catch(e){}
 }
 function account(){
