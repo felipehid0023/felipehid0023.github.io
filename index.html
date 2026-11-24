@@ -243,8 +243,8 @@ function setMode(m){
   mode=m;$('mw').classList.toggle('on',m==='w');$('mr').classList.toggle('on',m==='r');
   left=total(m);if(running)end=Date.now()+left*1000;draw();
 }
-/* Sonido de temporizador: ráfagas de 4 pitidos cortos durante 20 segundos */
-const ALARM_SECS=20;
+/* Sonido de temporizador: ráfagas de 4 pitidos cortos durante 10 segundos */
+const ALARM_SECS=10;
 let alCtx=null,alMaster=null,alTimer=null;
 function stopAlarm(){
   clearInterval(alTimer);alTimer=null;alMaster=null;
